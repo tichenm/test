@@ -147,4 +147,62 @@ describe("diagnostic engine", () => {
       nextAction: expect.stringContaining("trace"),
     });
   });
+
+  it("builds a store-execution diagnosis when the breakdown is mostly on-floor execution drift", () => {
+    let state = createInterviewState("store-stock-replenishment" as never);
+
+    state = advanceInterview(state, { painType: "inventory-accuracy" }).state;
+    state = advanceInterview(state, { frequency: "daily" }).state;
+    state = advanceInterview(state, { timeWindow: "closing shift" }).state;
+    state = advanceInterview(state, {
+      affectedScope: "front coolers and impulse shelves",
+    }).state;
+    state = advanceInterview(state, {
+      peopleInvolved: "store associates and the closing shift lead",
+    }).state;
+    state = advanceInterview(state, {
+      currentWorkaround: "manual shelf checks and backroom recounts every night",
+    }).state;
+    const completion = advanceInterview(state, {
+      operationalImpact: "the floor opens with the wrong counts and extra staff cleanup",
+    });
+
+    const record = buildDiagnosisRecord(completion.state);
+
+    expect(record).toMatchObject({
+      painType: "inventory-accuracy",
+      severity: "medium",
+      likelyRootCause: expect.stringContaining("store execution issue"),
+      nextAction: expect.stringContaining("shelf-check"),
+    });
+  });
+
+  it("builds an HQ or system diagnosis even when the pain shows up on store shelves", () => {
+    let state = createInterviewState("store-stock-replenishment" as never);
+
+    state = advanceInterview(state, { painType: "stockout" }).state;
+    state = advanceInterview(state, { frequency: "every weekend campaign" }).state;
+    state = advanceInterview(state, { timeWindow: "promo launch weekends" }).state;
+    state = advanceInterview(state, {
+      affectedScope: "promo shelves and high-traffic beverage displays",
+    }).state;
+    state = advanceInterview(state, {
+      peopleInvolved: "HQ allocation planning and the merchandising system",
+    }).state;
+    state = advanceInterview(state, {
+      currentWorkaround: "the store keeps escalating because the forecast and allocation signal stay too low",
+    }).state;
+    const completion = advanceInterview(state, {
+      operationalImpact: "the shelf goes empty even though the team checks it on time",
+    });
+
+    const record = buildDiagnosisRecord(completion.state);
+
+    expect(record).toMatchObject({
+      painType: "stockout",
+      severity: "high",
+      likelyRootCause: expect.stringContaining("HQ or system issue"),
+      nextAction: expect.stringContaining("compare store sell-through"),
+    });
+  });
 });

@@ -80,7 +80,6 @@ function includesKeyword(text: string, keywords: readonly string[]) {
 }
 
 const STORE_SIGNAL_KEYWORDS = [
-  "store",
   "shelf",
   "shift",
   "staff",
@@ -112,24 +111,50 @@ const HQ_SYSTEM_SIGNAL_KEYWORDS = [
 ] as const;
 
 function classifyStoreRailLeaning(fields: CompleteDiagnosisFields): StoreRailLeaning {
-  const diagnosticText = normalizeDiagnosticText(
+  const primarySignalText = normalizeDiagnosticText(
     fields.peopleInvolved,
     fields.currentWorkaround,
-    fields.operationalImpact,
-    fields.affectedScope,
   );
-  const hasStoreSignal = includesKeyword(diagnosticText, STORE_SIGNAL_KEYWORDS);
-  const hasHqSystemSignal = includesKeyword(diagnosticText, HQ_SYSTEM_SIGNAL_KEYWORDS);
+  const secondarySignalText = normalizeDiagnosticText(
+    fields.affectedScope,
+    fields.operationalImpact,
+  );
+  const hasPrimaryStoreSignal = includesKeyword(primarySignalText, STORE_SIGNAL_KEYWORDS);
+  const hasPrimaryHqSystemSignal = includesKeyword(
+    primarySignalText,
+    HQ_SYSTEM_SIGNAL_KEYWORDS,
+  );
 
-  if (hasStoreSignal && hasHqSystemSignal) {
+  if (hasPrimaryStoreSignal && hasPrimaryHqSystemSignal) {
     return "shared";
   }
 
-  if (hasHqSystemSignal) {
+  if (hasPrimaryHqSystemSignal) {
     return "hq-or-system";
   }
 
-  if (hasStoreSignal) {
+  if (hasPrimaryStoreSignal) {
+    return "store-execution";
+  }
+
+  const hasSecondaryStoreSignal = includesKeyword(
+    secondarySignalText,
+    STORE_SIGNAL_KEYWORDS,
+  );
+  const hasSecondaryHqSystemSignal = includesKeyword(
+    secondarySignalText,
+    HQ_SYSTEM_SIGNAL_KEYWORDS,
+  );
+
+  if (hasSecondaryStoreSignal && hasSecondaryHqSystemSignal) {
+    return "shared";
+  }
+
+  if (hasSecondaryHqSystemSignal) {
+    return "hq-or-system";
+  }
+
+  if (hasSecondaryStoreSignal) {
     return "store-execution";
   }
 
