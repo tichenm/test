@@ -1,13 +1,26 @@
 import { redirect } from "next/navigation";
 
 import { getAuthSession } from "@/lib/auth";
+import { normalizeCallbackPath } from "@/lib/auth-navigation";
 import { LoginForm } from "./login-form";
 
-export default async function LoginPage() {
+type LoginPageProps = {
+  searchParams?: Promise<{
+    callbackUrl?: string;
+    reason?: string;
+  }>;
+};
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await getAuthSession();
+  const params = searchParams ? await searchParams : undefined;
+  const callbackPath = normalizeCallbackPath(params?.callbackUrl);
+  const notice = params?.reason === "auth"
+    ? "Sign in to continue to the page you asked for."
+    : undefined;
 
   if (session?.user) {
-    redirect("/");
+    redirect(callbackPath);
   }
 
   return (
@@ -40,8 +53,7 @@ export default async function LoginPage() {
             </div>
           </div>
         </section>
-
-        <LoginForm />
+        <LoginForm callbackPath={callbackPath} notice={notice} />
       </div>
     </main>
   );

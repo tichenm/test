@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getAuthSession } from "@/lib/auth";
+import { buildLoginRedirect } from "@/lib/auth-navigation";
 import { buildInterviewInsights } from "@/lib/interview-insights";
 import {
   getDiagnosisReviewStatusLabel,
@@ -23,7 +24,7 @@ export default async function InsightsPage() {
   const session = await getAuthSession();
 
   if (!session?.user?.id) {
-    redirect("/login");
+    redirect(buildLoginRedirect("/insights"));
   }
 
   const interviews = await listInterviewSessionsForUser(session.user.id);

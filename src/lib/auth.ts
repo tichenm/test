@@ -3,6 +3,10 @@ import { type NextAuthOptions, getServerSession } from "next-auth";
 import EmailProvider from "next-auth/providers/email";
 import nodemailer from "nodemailer";
 
+import {
+  resolveTrustedRedirectUrl,
+  rewriteVerificationUrlToCallbackOrigin,
+} from "@/lib/auth-navigation";
 import { prisma } from "@/lib/db";
 
 type SendEmailParams = {
@@ -19,8 +23,10 @@ async function sendVerificationRequest({
   url,
   provider,
 }: SendEmailParams) {
+  const resolvedUrl = rewriteVerificationUrlToCallbackOrigin(url);
+
   if (!process.env.EMAIL_SERVER_HOST) {
-    console.info(`[auth] Magic link for ${identifier}: ${url}`);
+    console.info(`[auth] Magic link for ${identifier}: ${resolvedUrl}`);
     return;
   }
 
@@ -30,8 +36,8 @@ async function sendVerificationRequest({
     to: identifier,
     from: provider.from ?? process.env.EMAIL_FROM ?? "diagnosis@local.test",
     subject: "Your Guided Pain Discovery sign-in link",
-    text: `Use this sign-in link: ${url}`,
-    html: `<p>Use this sign-in link:</p><p><a href="${url}">${url}</a></p>`,
+    text: `Use this sign-in link: ${resolvedUrl}`,
+    html: `<p>Use this sign-in link:</p><p><a href="${resolvedUrl}">${resolvedUrl}</a></p>`,
   });
 }
 
@@ -66,6 +72,9 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      return resolveTrustedRedirectUrl(url, baseUrl);
+    },
     async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;

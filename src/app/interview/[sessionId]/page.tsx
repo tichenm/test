@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { getAuthSession } from "@/lib/auth";
+import { buildLoginRedirect } from "@/lib/auth-navigation";
 import { renderGuidedQuestion } from "@/lib/ai";
 import {
   getCurrentStepDefinition,
@@ -19,13 +20,13 @@ export default async function InterviewPage({
 }: {
   params: Promise<{ sessionId: string }>;
 }) {
+  const { sessionId } = await params;
   const session = await getAuthSession();
 
   if (!session?.user?.id) {
-    redirect("/login");
+    redirect(buildLoginRedirect(`/interview/${sessionId}`));
   }
 
-  const { sessionId } = await params;
   const interview = await getInterviewSessionForUser(session.user.id, sessionId);
 
   if (!interview) {
@@ -52,7 +53,7 @@ export default async function InterviewPage({
     const currentSession = await getAuthSession();
 
     if (!currentSession?.user?.id) {
-      redirect("/login");
+      redirect(buildLoginRedirect(`/interview/${sessionId}`));
     }
 
     const answer = String(formData.get("answer") || "").trim();

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { RailPicker } from "@/components/rail-picker";
 import { getAuthSession } from "@/lib/auth";
+import { buildLoginRedirect } from "@/lib/auth-navigation";
 import {
   DEFAULT_RAIL_KEY,
   getDiagnosticRail,
@@ -34,7 +35,7 @@ export default async function HomePage() {
   const rails = listDiagnosticRails();
 
   if (!session?.user?.id) {
-    redirect("/login");
+    redirect(buildLoginRedirect("/"));
   }
 
   const interviews = await listInterviewSessionsForUser(session.user.id);
@@ -47,7 +48,7 @@ export default async function HomePage() {
     const currentSession = await getAuthSession();
 
     if (!currentSession?.user?.id) {
-      redirect("/login");
+      redirect(buildLoginRedirect("/"));
     }
 
     const selectedRailKey = String(formData.get("railKey") || DEFAULT_RAIL_KEY);

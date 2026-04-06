@@ -3,7 +3,14 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 
-export function LoginForm() {
+import { resolveLoginCallbackUrl } from "@/lib/auth-navigation";
+
+type LoginFormProps = {
+  callbackPath?: string;
+  notice?: string;
+};
+
+export function LoginForm({ callbackPath, notice }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
     "idle",
@@ -19,7 +26,10 @@ export function LoginForm() {
     const result = await signIn("email", {
       email,
       redirect: false,
-      callbackUrl: "/",
+      callbackUrl: resolveLoginCallbackUrl(
+        callbackPath,
+        window.location.origin,
+      ),
     });
 
     if (result?.error) {
@@ -34,6 +44,12 @@ export function LoginForm() {
 
   return (
     <form className="app-card flex flex-col gap-5 p-6" onSubmit={handleSubmit}>
+      {notice ? (
+        <p className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] px-4 py-3 text-sm text-[var(--color-text-muted)]">
+          {notice}
+        </p>
+      ) : null}
+
       <div className="space-y-2">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
           Email sign-in

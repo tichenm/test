@@ -1,0 +1,70 @@
+export function buildLoginRedirect(callbackPath: string) {
+  const normalizedPath = normalizeCallbackPath(callbackPath);
+  const search = new URLSearchParams({
+    callbackUrl: normalizedPath,
+    reason: "auth",
+  });
+
+  return `/login?${search.toString()}`;
+}
+
+export function normalizeCallbackPath(callbackPath?: string) {
+  if (!callbackPath) {
+    return "/";
+  }
+
+  if (callbackPath.startsWith("http://") || callbackPath.startsWith("https://")) {
+    return new URL(callbackPath).pathname || "/";
+  }
+
+  return callbackPath.startsWith("/") ? callbackPath : `/${callbackPath}`;
+}
+
+export function resolveLoginCallbackUrl(
+  callbackPath: string | undefined,
+  origin: string,
+) {
+  return new URL(normalizeCallbackPath(callbackPath), origin).toString();
+}
+
+function isLoopbackOrigin(value: URL) {
+  return value.hostname === "localhost" || value.hostname === "127.0.0.1";
+}
+
+export function resolveTrustedRedirectUrl(url: string, baseUrl: string) {
+  if (url.startsWith("/")) {
+    return new URL(url, baseUrl).toString();
+  }
+
+  const targetUrl = new URL(url);
+  const base = new URL(baseUrl);
+
+  if (targetUrl.origin === base.origin) {
+    return url;
+  }
+
+  if (
+    isLoopbackOrigin(targetUrl) &&
+    isLoopbackOrigin(base) &&
+    targetUrl.port === base.port &&
+    targetUrl.protocol === base.protocol
+  ) {
+    return url;
+  }
+
+  return baseUrl;
+}
+
+export function rewriteVerificationUrlToCallbackOrigin(verificationUrl: string) {
+  const rewrittenUrl = new URL(verificationUrl);
+  const callbackUrl = rewrittenUrl.searchParams.get("callbackUrl");
+
+  if (!callbackUrl) {
+    return verificationUrl;
+  }
+
+  const callbackOrigin = new URL(callbackUrl, rewrittenUrl.origin).origin;
+  rewrittenUrl.protocol = new URL(callbackOrigin).protocol;
+  rewrittenUrl.host = new URL(callbackOrigin).host;
+  return rewrittenUrl.toString();
+}
