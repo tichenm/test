@@ -32,6 +32,9 @@ describe("interview presenters", () => {
     expect(getInterviewRailLabel("inventory-replenishment")).toBe(
       "Inventory and replenishment",
     );
+    expect(getInterviewRailLabel("store-stock-replenishment")).toBe(
+      "Store stock and replenishment",
+    );
     expect(getInterviewRailLabel("warehouse-receiving")).toBe("Warehouse receiving");
   });
 

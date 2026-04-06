@@ -106,6 +106,29 @@ describe("interview services", () => {
     );
   });
 
+  it("creates a store-manager stock session for the dedicated store rail", async () => {
+    prismaMock.interviewSession.create.mockResolvedValue({ id: "session-store-rail" });
+
+    await createInterviewSessionForUser("user-1", "store-stock-replenishment" as never);
+
+    expect(generateGuidedQuestionMock).toHaveBeenCalledWith(
+      expect.stringContaining("In the store"),
+      expect.objectContaining({
+        railKey: "store-stock-replenishment",
+      }),
+    );
+    expect(prismaMock.interviewSession.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          railKey: "store-stock-replenishment",
+          state: expect.objectContaining({
+            railKey: "store-stock-replenishment",
+          }),
+        }),
+      }),
+    );
+  });
+
   it("stores a trimmed store name when the diagnosis starts with location context", async () => {
     prismaMock.interviewSession.create.mockResolvedValue({ id: "session-store-1" });
 

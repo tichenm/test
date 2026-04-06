@@ -1,6 +1,9 @@
 import type { DiagnosisRecord } from "@/lib/diagnosis-schema";
 
-export type RailKey = "inventory-replenishment" | "warehouse-receiving";
+export type RailKey =
+  | "inventory-replenishment"
+  | "store-stock-replenishment"
+  | "warehouse-receiving";
 
 export type PainType = "stockout" | "overstock" | "inventory-accuracy";
 export type Severity = "medium" | "high";
@@ -53,6 +56,8 @@ export type DiagnosticRail = {
   buildDiagnosis: (fields: CompleteDiagnosisFields) => DiagnosisRecord;
 };
 
+type StoreRailLeaning = "store-execution" | "hq-or-system" | "shared";
+
 const sharedStepOrder = [
   "problem-symptom",
   "frequency-pattern",
@@ -62,6 +67,103 @@ const sharedStepOrder = [
   "current-workaround",
   "operational-impact",
 ] as const;
+
+function normalizeDiagnosticText(...values: Array<string | undefined>) {
+  return values
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function includesKeyword(text: string, keywords: readonly string[]) {
+  return keywords.some((keyword) => text.includes(keyword));
+}
+
+const STORE_SIGNAL_KEYWORDS = [
+  "store",
+  "shelf",
+  "shift",
+  "staff",
+  "associate",
+  "replenish",
+  "replenishment",
+  "cycle count",
+  "count",
+  "backroom",
+  "display",
+  "manual",
+  "floor",
+] as const;
+
+const HQ_SYSTEM_SIGNAL_KEYWORDS = [
+  "hq",
+  "head office",
+  "planning",
+  "planner",
+  "allocation",
+  "allocator",
+  "forecast",
+  "forecasting",
+  "system",
+  "signal",
+  "merchandising",
+  "regional",
+  "auto",
+] as const;
+
+function classifyStoreRailLeaning(fields: CompleteDiagnosisFields): StoreRailLeaning {
+  const diagnosticText = normalizeDiagnosticText(
+    fields.peopleInvolved,
+    fields.currentWorkaround,
+    fields.operationalImpact,
+    fields.affectedScope,
+  );
+  const hasStoreSignal = includesKeyword(diagnosticText, STORE_SIGNAL_KEYWORDS);
+  const hasHqSystemSignal = includesKeyword(diagnosticText, HQ_SYSTEM_SIGNAL_KEYWORDS);
+
+  if (hasStoreSignal && hasHqSystemSignal) {
+    return "shared";
+  }
+
+  if (hasHqSystemSignal) {
+    return "hq-or-system";
+  }
+
+  if (hasStoreSignal) {
+    return "store-execution";
+  }
+
+  return "shared";
+}
+
+function buildStoreRailRootCause(
+  painType: PainType,
+  leaning: StoreRailLeaning,
+) {
+  switch (leaning) {
+    case "store-execution":
+      return painType === "stockout"
+        ? "This looks more like a store execution issue. The store is not consistently catching and correcting stock gaps before they become customer-facing stockouts."
+        : "This looks more like a store execution issue. The floor routine is drifting away from the intended replenishment and shelf-control rhythm.";
+    case "hq-or-system":
+      return "This looks more like an HQ or system issue. The store is repeatedly working around replenishment or planning signals that do not match the floor.";
+    case "shared":
+    default:
+      return "This looks like a shared issue. Upstream replenishment signals and store-floor execution are both contributing to the same stock gap.";
+  }
+}
+
+function buildStoreRailNextAction(leaning: StoreRailLeaning) {
+  switch (leaning) {
+    case "store-execution":
+      return "Review the affected shift's shelf-check and replenishment ownership before the next peak window.";
+    case "hq-or-system":
+      return "Pull the last two weeks of affected SKUs and compare store sell-through with the replenishment or allocation signal being sent from HQ.";
+    case "shared":
+    default:
+      return "Choose one repeated stockout SKU and trace it from HQ recommendation to store shelf execution to find the first point where the signal drifts.";
+  }
+}
 
 const inventoryReplenishmentRail: DiagnosticRail = {
   key: "inventory-replenishment",
@@ -129,6 +231,77 @@ const inventoryReplenishmentRail: DiagnosticRail = {
         ? "Review the replenishment handoff timing and ownership before the next weekend shift."
         : "Review the replenishment ownership and timing for the affected workflow.",
   }),
+};
+
+const storeStockReplenishmentRail: DiagnosticRail = {
+  key: "store-stock-replenishment",
+  label: "Store stock and replenishment",
+  workbenchSummary:
+    "Turn a store-level stock complaint into a clear diagnosis, separating store execution gaps from HQ or system issues, with one next action for the manager.",
+  interviewContextLabel: "Store stock and replenishment",
+  stepOrder: sharedStepOrder,
+  steps: {
+    "problem-symptom": {
+      key: "problem-symptom",
+      field: "painType",
+      prompt: () =>
+        "In the store, what goes wrong most often, stockouts, overstock, or inventory accuracy drift?",
+    },
+    "frequency-pattern": {
+      key: "frequency-pattern",
+      field: "frequency",
+      prompt: (state) =>
+        state.fields.painType === "stockout"
+          ? "How often does the store end up with an empty shelf or missing sellable stock?"
+          : "How often does this store stock issue show up?",
+    },
+    "time-window": {
+      key: "time-window",
+      field: "timeWindow",
+      prompt: () =>
+        "When does this show up most often, during peak trading, campaign windows, shift handoffs, or after deliveries?",
+    },
+    "affected-scope": {
+      key: "affected-scope",
+      field: "affectedScope",
+      prompt: () =>
+        "Which SKUs, categories, promo displays, or shelf zones are affected most often?",
+    },
+    "people-involved": {
+      key: "people-involved",
+      field: "peopleInvolved",
+      prompt: () =>
+        "Who is usually involved when the stock gap appears, store staff, shift leads, HQ planning, or system owners?",
+    },
+    "current-workaround": {
+      key: "current-workaround",
+      field: "currentWorkaround",
+      prompt: () =>
+        "How is the store currently working around the stock problem?",
+    },
+    "operational-impact": {
+      key: "operational-impact",
+      field: "operationalImpact",
+      prompt: () =>
+        "What operational impact does this create for the floor, the customer, or the next shift?",
+    },
+  },
+  buildDiagnosis: (fields) => {
+    const leaning = classifyStoreRailLeaning(fields);
+
+    return {
+      painType: fields.painType,
+      severity: fields.painType === "stockout" ? "high" : "medium",
+      frequency: fields.frequency,
+      timeWindow: fields.timeWindow,
+      affectedScope: fields.affectedScope,
+      peopleInvolved: fields.peopleInvolved,
+      currentWorkaround: fields.currentWorkaround,
+      operationalImpact: fields.operationalImpact,
+      likelyRootCause: buildStoreRailRootCause(fields.painType, leaning),
+      nextAction: buildStoreRailNextAction(leaning),
+    };
+  },
 };
 
 const warehouseReceivingRail: DiagnosticRail = {
@@ -203,6 +376,7 @@ export const DEFAULT_RAIL_KEY: RailKey = "inventory-replenishment";
 
 const diagnosticRails: Record<RailKey, DiagnosticRail> = {
   "inventory-replenishment": inventoryReplenishmentRail,
+  "store-stock-replenishment": storeStockReplenishmentRail,
   "warehouse-receiving": warehouseReceivingRail,
 };
 

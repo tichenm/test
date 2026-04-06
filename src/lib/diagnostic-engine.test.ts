@@ -105,4 +105,46 @@ describe("diagnostic engine", () => {
       nextAction: expect.stringContaining("receiving"),
     });
   });
+
+  it("uses store-manager wording for store stock interviews", () => {
+    const initial = createInterviewState("store-stock-replenishment" as never);
+
+    const afterSymptom = advanceInterview(initial, {
+      painType: "stockout",
+    }).state;
+
+    expect(afterSymptom.currentStep).toBe("frequency-pattern");
+    expect(getCurrentStepDefinition(afterSymptom).prompt(afterSymptom)).toContain(
+      "empty shelf",
+    );
+  });
+
+  it("builds shared root-cause copy for store stock interviews when store and HQ signals both appear", () => {
+    let state = createInterviewState("store-stock-replenishment" as never);
+
+    state = advanceInterview(state, { painType: "stockout" }).state;
+    state = advanceInterview(state, { frequency: "daily" }).state;
+    state = advanceInterview(state, { timeWindow: "weekend peaks" }).state;
+    state = advanceInterview(state, {
+      affectedScope: "promo endcaps and beverage aisle",
+    }).state;
+    state = advanceInterview(state, {
+      peopleInvolved: "store staff, shift leads, and HQ replenishment planning",
+    }).state;
+    state = advanceInterview(state, {
+      currentWorkaround: "manual shelf checks and repeated HQ chat escalation",
+    }).state;
+    const completion = advanceInterview(state, {
+      operationalImpact: "empty shelves and missed promo sales",
+    });
+
+    const record = buildDiagnosisRecord(completion.state);
+
+    expect(record).toMatchObject({
+      painType: "stockout",
+      severity: "high",
+      likelyRootCause: expect.stringContaining("shared"),
+      nextAction: expect.stringContaining("trace"),
+    });
+  });
 });

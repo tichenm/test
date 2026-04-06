@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { getAuthSession } from "@/lib/auth";
 import { buildLoginRedirect } from "@/lib/auth-navigation";
+import type { RailKey } from "@/lib/diagnostic-engine";
 import { buildHistoryFilterHref } from "@/lib/history-filters";
 import { buildInterviewInsights } from "@/lib/interview-insights";
 import {
@@ -107,7 +108,7 @@ export default async function InsightsPage() {
                 ...item,
                 href: buildHistoryFilterHref({
                   status: "completed",
-                  railKey: item.key as "inventory-replenishment" | "warehouse-receiving",
+                  railKey: item.key as RailKey,
                 }),
               }))}
             />
