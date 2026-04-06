@@ -151,20 +151,38 @@ def extract(pattern: str, content: str, label: str) -> str:
     return match.group(1)
 
 
+def extract_magic_link(log_text: str, email: str, base_url: str) -> str | None:
+    pattern = re.compile(
+        rf"Magic link for {re.escape(email)}: (http://(?:localhost|127\.0\.0\.1):3000/api/auth/callback/email\?[^\"]+)"
+    )
+    matches = pattern.findall(log_text)
+    if not matches:
+        return None
+
+    parsed_base_url = parse.urlsplit(base_url)
+    parsed_link = parse.urlsplit(matches[-1])
+    return parse.urlunsplit(
+        (
+            parsed_link.scheme,
+            parsed_base_url.netloc or parsed_link.netloc,
+            parsed_link.path,
+            parsed_link.query,
+            parsed_link.fragment,
+        )
+    )
+
+
 def wait_for_magic_link(email: str, start_offset: int, timeout_seconds: int = 10) -> str:
     require(DEV_LOG_PATH.exists(), f"Missing dev log: {DEV_LOG_PATH}")
     deadline = time.time() + timeout_seconds
-    pattern = re.compile(
-        rf"Magic link for {re.escape(email)}: (http://localhost:3000/api/auth/callback/email\?[^\"]+)"
-    )
 
     while time.time() < deadline:
         with DEV_LOG_PATH.open() as handle:
             handle.seek(start_offset)
             log_text = handle.read()
-        matches = pattern.findall(log_text)
-        if matches:
-            return matches[-1].replace("http://localhost:3000", BASE_URL)
+        magic_link = extract_magic_link(log_text, email, BASE_URL)
+        if magic_link:
+            return magic_link
         time.sleep(0.2)
 
     raise SystemExit(f"Magic link for {email} was not written to {DEV_LOG_PATH}")

@@ -5,7 +5,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from smoke_local_flow import get_smoke_scenario
+from smoke_local_flow import extract_magic_link, get_smoke_scenario
 
 
 class SmokeLocalFlowScenarioTests(unittest.TestCase):
@@ -41,6 +41,25 @@ class SmokeLocalFlowScenarioTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertIn("usage:", result.stdout.lower())
         self.assertIn("--rail-key", result.stdout)
+
+    def test_extract_magic_link_supports_localhost_and_loopback(self) -> None:
+        localhost_log = (
+            '[auth] Magic link for qa@store.com: '
+            'http://localhost:3000/api/auth/callback/email?token=abc&email=qa%40store.com'
+        )
+        loopback_log = (
+            '[auth] Magic link for qa@store.com: '
+            'http://127.0.0.1:3000/api/auth/callback/email?token=def&email=qa%40store.com'
+        )
+
+        self.assertEqual(
+            extract_magic_link(localhost_log, "qa@store.com", "http://127.0.0.1:3000"),
+            "http://127.0.0.1:3000/api/auth/callback/email?token=abc&email=qa%40store.com",
+        )
+        self.assertEqual(
+            extract_magic_link(loopback_log, "qa@store.com", "http://localhost:3000"),
+            "http://localhost:3000/api/auth/callback/email?token=def&email=qa%40store.com",
+        )
 
 
 if __name__ == "__main__":
