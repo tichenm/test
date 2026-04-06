@@ -13,6 +13,46 @@ import {
   updateDiagnosisFollowUpForUser,
 } from "@/lib/interviews";
 
+type RecapDiagnosisFields = {
+  frequency: string;
+  timeWindow: string;
+  affectedScope: string;
+  operationalImpact: string;
+  peopleInvolved: string;
+  currentWorkaround: string;
+};
+
+function getRecapHeading(likelyRootCause: string) {
+  const normalized = likelyRootCause.toLowerCase();
+
+  if (normalized.includes("hq or system issue")) {
+    return "This looks mostly upstream";
+  }
+
+  if (normalized.includes("store execution issue")) {
+    return "This looks mostly like a store execution gap";
+  }
+
+  return "This looks like a split ownership problem";
+}
+
+function buildEvidenceCards(diagnosis: RecapDiagnosisFields) {
+  return [
+    {
+      label: "Pattern",
+      body: `This issue repeats ${diagnosis.frequency} and clusters around ${diagnosis.timeWindow}.`,
+    },
+    {
+      label: "Where it shows up",
+      body: `It is showing up around ${diagnosis.affectedScope} and the impact is ${diagnosis.operationalImpact}.`,
+    },
+    {
+      label: "Workaround signal",
+      body: `The strongest signal is around ${diagnosis.peopleInvolved}. Right now the team is compensating through ${diagnosis.currentWorkaround}.`,
+    },
+  ];
+}
+
 export default async function DiagnosisDetailPage({
   params,
 }: {
@@ -41,6 +81,8 @@ export default async function DiagnosisDetailPage({
     diagnosisRecord: diagnosis,
   };
   const handoffBrief = buildDiagnosisHandoffBrief(completedInterview);
+  const recapHeading = getRecapHeading(diagnosis.likelyRootCause);
+  const evidenceCards = buildEvidenceCards(diagnosis);
 
   async function saveFollowUpAction(formData: FormData) {
     "use server";
@@ -69,47 +111,80 @@ export default async function DiagnosisDetailPage({
       </Link>
 
       <section className="app-card flex flex-col gap-4 p-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-            Core diagnosis
-          </p>
-          <span className="rounded-full bg-[var(--color-surface-strong)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+          What we think is happening
+        </p>
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <span className="rounded-full bg-[var(--color-surface-strong)] px-3 py-2">
             {getInterviewRailLabel(interview.railKey)}
           </span>
           {interview.storeName ? (
-            <span className="rounded-full bg-[var(--color-surface-strong)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+            <span className="rounded-full bg-[var(--color-surface-strong)] px-3 py-2">
               {interview.storeName}
             </span>
           ) : null}
           {interview.roleName ? (
-            <span className="rounded-full bg-[var(--color-surface-strong)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+            <span className="rounded-full bg-[var(--color-surface-strong)] px-3 py-2">
               {interview.roleName}
             </span>
           ) : null}
-        </div>
-        <h1 className="display-title text-3xl font-semibold tracking-tight sm:text-4xl">
-          {diagnosis.likelyRootCause}
-        </h1>
-        <div className="flex flex-wrap gap-3 text-sm">
           <span className="rounded-full bg-[var(--color-surface-strong)] px-3 py-2">
             Severity: {diagnosis.severity}
           </span>
           <span className="rounded-full bg-[var(--color-surface-strong)] px-3 py-2">
             Follow-up: {getDiagnosisReviewStatusLabel(diagnosis.reviewStatus)}
           </span>
-          <span className="rounded-full bg-[var(--color-surface-strong)] px-3 py-2">
-            Action: {diagnosis.nextAction}
-          </span>
         </div>
+        <h1 className="display-title text-3xl font-semibold tracking-tight sm:text-4xl">
+          {recapHeading}
+        </h1>
+        <p className="muted max-w-3xl leading-7">{diagnosis.likelyRootCause}</p>
       </section>
 
-      <section className="app-card grid gap-3 p-6 sm:grid-cols-2">
-        <Detail label="Pain type" value={diagnosis.painType} />
-        <Detail label="Frequency" value={diagnosis.frequency} />
-        <Detail label="Time window" value={diagnosis.timeWindow} />
-        <Detail label="Affected scope" value={diagnosis.affectedScope} />
-        <Detail label="People involved" value={diagnosis.peopleInvolved} />
-        <Detail label="Current workaround" value={diagnosis.currentWorkaround} />
+      <section className="grid gap-4 lg:grid-cols-3">
+        <div className="app-card flex flex-col gap-4 p-6 lg:col-span-3">
+          <div className="space-y-1">
+            <h2 className="display-title text-2xl font-semibold">Why we think that</h2>
+            <p className="muted text-sm leading-6">
+              These are the signals that most strongly shaped the diagnosis.
+            </p>
+          </div>
+        </div>
+
+        {evidenceCards.map((card) => (
+          <section key={card.label} className="app-card flex flex-col gap-3 p-6">
+            <h3 className="display-title text-xl font-semibold">{card.label}</h3>
+            <p className="muted text-sm leading-6">{card.body}</p>
+          </section>
+        ))}
+      </section>
+
+      <section className="app-card flex flex-col gap-3 p-6">
+        <h2 className="display-title text-2xl font-semibold">What to do first</h2>
+        <p className="text-base leading-7">{diagnosis.nextAction}</p>
+        <p className="muted text-sm leading-6">
+          Start here first. If this holds up, then expand into a broader fix.
+        </p>
+      </section>
+
+      <section className="app-card flex flex-col gap-4 p-6">
+        <div className="space-y-1">
+          <h2 className="display-title text-2xl font-semibold">What the team is doing now</h2>
+          <p className="muted text-sm leading-6">
+            Review the current owner, status, and note before changing the follow-up.
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <StatusDetail label="Current owner" value={diagnosis.ownerName || "Unassigned"} />
+          <StatusDetail
+            label="Current status"
+            value={getDiagnosisReviewStatusLabel(diagnosis.reviewStatus)}
+          />
+          <StatusDetail
+            label="Latest note"
+            value={diagnosis.reviewNote || "No follow-up note yet."}
+          />
+        </div>
       </section>
 
       <section className="app-card flex flex-col gap-3 p-6">
@@ -126,6 +201,9 @@ export default async function DiagnosisDetailPage({
         </div>
 
         <form action={saveFollowUpAction} className="grid gap-4">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+            Update follow-up
+          </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="grid gap-2 text-sm font-medium">
               Follow-up status
@@ -227,7 +305,7 @@ export default async function DiagnosisDetailPage({
   );
 }
 
-function Detail({ label, value }: { label: string; value: string }) {
+function StatusDetail({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] p-4">
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
