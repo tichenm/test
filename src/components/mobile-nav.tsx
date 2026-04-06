@@ -11,7 +11,7 @@ const items = [
   { href: "/", label: "Home" },
   { href: "/insights", label: "Insights" },
   { href: "/history", label: "History" },
-  { href: "/login", label: "Account" },
+  { href: "/account", label: "Account" },
 ];
 
 export function MobileNav({ isAuthenticated }: MobileNavProps) {

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { getAuthSession } from "@/lib/auth";
 import { buildLoginRedirect } from "@/lib/auth-navigation";
+import { buildHistoryFilterHref } from "@/lib/history-filters";
 import { buildInterviewInsights } from "@/lib/interview-insights";
 import {
   getDiagnosisReviewStatusLabel,
@@ -102,12 +103,24 @@ export default async function InsightsPage() {
             <BreakdownCard
               title="Issues by workflow"
               description="Which guided rails are surfacing the most completed problems."
-              items={insights.railBreakdown}
+              items={insights.railBreakdown.map((item) => ({
+                ...item,
+                href: buildHistoryFilterHref({
+                  status: "completed",
+                  railKey: item.key as "inventory-replenishment" | "warehouse-receiving",
+                }),
+              }))}
             />
             <BreakdownCard
               title="Issues by role"
               description="Which frontline functions keep surfacing the same structured pain."
-              items={insights.roleBreakdown}
+              items={insights.roleBreakdown.map((item) => ({
+                ...item,
+                href: buildHistoryFilterHref({
+                  status: "completed",
+                  roleName: item.key,
+                }),
+              }))}
             />
           </section>
 
@@ -115,7 +128,13 @@ export default async function InsightsPage() {
             <BreakdownCard
               title="Issues by pain type"
               description="What kind of operating pain managers are hearing most often."
-              items={insights.painTypeBreakdown}
+              items={insights.painTypeBreakdown.map((item) => ({
+                ...item,
+                href: buildHistoryFilterHref({
+                  status: "completed",
+                  painType: item.key as "stockout" | "overstock" | "inventory-accuracy",
+                }),
+              }))}
             />
             <section className="app-card flex flex-col gap-4 p-6">
               <div className="space-y-1">
@@ -130,12 +149,18 @@ export default async function InsightsPage() {
                     key={item.label}
                     className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] p-4"
                   >
-                    <div className="flex items-start justify-between gap-4">
+                    <Link
+                      href={buildHistoryFilterHref({
+                        status: "completed",
+                        query: item.label,
+                      })}
+                      className="flex items-start justify-between gap-4"
+                    >
                       <p className="text-sm leading-6">{item.label}</p>
                       <span className="rounded-full bg-[var(--color-surface)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
                         {item.count}
                       </span>
-                    </div>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -146,7 +171,13 @@ export default async function InsightsPage() {
             <BreakdownCard
               title="Issues by site"
               description="Where repeated diagnoses are clustering when people add location context."
-              items={insights.storeBreakdown}
+              items={insights.storeBreakdown.map((item) => ({
+                ...item,
+                href: buildHistoryFilterHref({
+                  status: "completed",
+                  storeName: item.key,
+                }),
+              }))}
             />
             <BreakdownCard
               title="Follow-up backlog"
@@ -154,6 +185,10 @@ export default async function InsightsPage() {
               items={insights.reviewStatusBreakdown.map((item) => ({
                 ...item,
                 label: getDiagnosisReviewStatusLabel(item.key),
+                href: buildHistoryFilterHref({
+                  status: "completed",
+                  reviewStatus: item.key as "new" | "reviewing" | "accepted" | "resolved",
+                }),
               }))}
             />
           </section>
@@ -162,7 +197,13 @@ export default async function InsightsPage() {
             <BreakdownCard
               title="Severity mix"
               description="A quick split between higher-risk and medium-severity diagnoses."
-              items={insights.severityBreakdown}
+              items={insights.severityBreakdown.map((item) => ({
+                ...item,
+                href: buildHistoryFilterHref({
+                  status: "completed",
+                  query: item.key,
+                }),
+              }))}
             />
             <div className="app-card rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface-strong)] p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
@@ -268,6 +309,7 @@ function BreakdownCard({
     key: string;
     label: string;
     count: number;
+    href?: string;
   }>;
 }) {
   return (
@@ -286,12 +328,26 @@ function BreakdownCard({
           items.map((item) => (
             <li
               key={item.key}
-              className="flex items-center justify-between gap-4 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] p-4"
+              className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)]"
             >
-              <span className="text-sm capitalize">{item.label}</span>
-              <span className="rounded-full bg-[var(--color-surface)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                {item.count}
-              </span>
+              {item.href ? (
+                <Link
+                  href={item.href}
+                  className="flex items-center justify-between gap-4 p-4"
+                >
+                  <span className="text-sm capitalize">{item.label}</span>
+                  <span className="rounded-full bg-[var(--color-surface)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                    {item.count}
+                  </span>
+                </Link>
+              ) : (
+                <div className="flex items-center justify-between gap-4 p-4">
+                  <span className="text-sm capitalize">{item.label}</span>
+                  <span className="rounded-full bg-[var(--color-surface)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                    {item.count}
+                  </span>
+                </div>
+              )}
             </li>
           ))
         )}

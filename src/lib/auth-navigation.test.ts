@@ -16,12 +16,18 @@ describe("auth navigation", () => {
     expect(buildLoginRedirect("/history/abc123")).toBe(
       "/login?callbackUrl=%2Fhistory%2Fabc123&reason=auth",
     );
+    expect(buildLoginRedirect("/history/export?status=completed&railKey=warehouse-receiving")).toBe(
+      "/login?callbackUrl=%2Fhistory%2Fexport%3Fstatus%3Dcompleted%26railKey%3Dwarehouse-receiving&reason=auth",
+    );
   });
 
   it("normalizes absolute and relative callback paths", () => {
     expect(normalizeCallbackPath("/history")).toBe("/history");
     expect(normalizeCallbackPath("history")).toBe("/history");
     expect(normalizeCallbackPath("http://localhost:3000/history")).toBe("/history");
+    expect(normalizeCallbackPath("http://localhost:3000/history/export?status=completed")).toBe(
+      "/history/export?status=completed",
+    );
     expect(normalizeCallbackPath(undefined)).toBe("/");
   });
 

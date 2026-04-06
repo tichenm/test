@@ -5,7 +5,7 @@ operational diagnoses. The current slice is tuned for store managers,
 warehouse supervisors, and similar execution-layer operators who know where the
 real pain lives.
 
-## Current Slice
+## Current Product Slice
 
 - Guided diagnosis flow with rail-specific questioning
 - Email magic-link auth with NextAuth
@@ -13,6 +13,8 @@ real pain lives.
 - Optional OpenAI rewriting layer with deterministic fallback
 - History, diagnosis detail, and aggregated insights views
 - Follow-up ownership and review fields on saved diagnoses
+- CSV export for filtered diagnosis backlog views
+- Plain-text handoff briefs for escalating a diagnosis
 
 ## Quickstart
 
@@ -34,23 +36,24 @@ npm run setup:local
 npm run dev
 ```
 
-4. Open either URL:
+4. Open the URL shown in the terminal banner.
+
+Usually this is one of:
 
 - `http://localhost:3000`
 - `http://127.0.0.1:3000`
 
-## What `setup:local` Does
+If `3000` is already in use, Next.js may attach to an existing repo dev server
+or start on another open port such as `3001`. Trust the terminal banner.
 
-`npm run setup:local` performs the default happy-path bootstrap for macOS with
-Homebrew Postgres 16:
+## Docs Map
 
-- Creates `.env` from `.env.example` if needed
-- Generates the Prisma client
-- Initializes `.postgres-data/` if this repo has never started Postgres locally
-- Starts the local Postgres server when the database is not reachable
-- Creates the `guided_pain_discovery` database if needed
-- Applies checked-in Prisma migrations
-- Runs the same readiness checks exposed by `npm run doctor`
+- [Onboarding](docs/onboarding.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Verification](docs/verification.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security](SECURITY.md)
+- [Changelog](CHANGELOG.md)
 
 ## Daily Commands
 
@@ -60,81 +63,34 @@ npm run db:start
 npm run db:stop
 npm run prisma:status
 npm run smoke:local
-npm run test:python
-```
-
-## Verification
-
-Use this order when you want a full local confidence pass:
-
-```bash
-npm run lint
-npm run test:run
-npm run test:python
-npx next build --webpack
-npx tsc --noEmit
-```
-
-`npx tsc --noEmit` should run after `npx next build --webpack` because Next 16
-materializes `.next/types` during the build step.
-
-## Troubleshooting
-
-### `npm run setup:local` says Postgres CLI is missing
-
-Install Postgres 16 first:
-
-```bash
-brew install postgresql@16
-```
-
-Then rerun `npm run setup:local`.
-
-### `npm run doctor` fails on the database checks
-
-Start the local database and re-run the doctor:
-
-```bash
-npm run db:start
-npm run doctor
-```
-
-If the repo has never initialized local Postgres data, run:
-
-```bash
-npm run db:init
-npm run db:start
-npm run db:createdb
-```
-
-### Magic-link emails are not arriving locally
-
-If SMTP env vars are blank, the app logs the magic link URL to the dev server
-console instead of sending email. This is expected for local development.
-
-### OpenAI is not configured
-
-The app still works without `OPENAI_API_KEY`. Guided prompts and summaries fall
-back to deterministic local wording.
-
-### `127.0.0.1` caused HMR warnings in Next dev
-
-`next.config.ts` now whitelists `127.0.0.1` via `allowedDevOrigins`, so both
-`localhost` and `127.0.0.1` should work during local development.
-
-### Smoke test help
-
-The smoke runner now exposes CLI help:
-
-```bash
 python3 scripts/smoke_local_flow.py --help
 ```
 
-Example rail-specific run:
+## Upgrade Path
 
-```bash
-python3 scripts/smoke_local_flow.py --rail-key warehouse-receiving
-```
+Check [CHANGELOG.md](CHANGELOG.md) before pulling or after rebasing.
+
+Today the upgrade surface is still small, but this file is now the canonical
+place to record:
+
+- developer-facing workflow changes
+- auth and callback behavior changes
+- local environment changes
+- anything that needs manual re-verification
+
+## Feedback Loop
+
+If the product flow, onboarding, or developer workflow is confusing, file it:
+
+- [Bug report](.github/ISSUE_TEMPLATE/bug_report.md)
+- [Feature request](.github/ISSUE_TEMPLATE/feature_request.md)
+
+For DX bugs, include:
+
+- the command you ran
+- the URL you opened
+- terminal output or screenshots
+- whether the issue happened on `localhost`, `127.0.0.1`, or both
 
 ## Environment Notes
 

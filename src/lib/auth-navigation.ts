@@ -14,7 +14,8 @@ export function normalizeCallbackPath(callbackPath?: string) {
   }
 
   if (callbackPath.startsWith("http://") || callbackPath.startsWith("https://")) {
-    return new URL(callbackPath).pathname || "/";
+    const parsed = new URL(callbackPath);
+    return `${parsed.pathname || "/"}${parsed.search}`;
   }
 
   return callbackPath.startsWith("/") ? callbackPath : `/${callbackPath}`;

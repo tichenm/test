@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { getAuthSession } from "@/lib/auth";
 import { buildLoginRedirect } from "@/lib/auth-navigation";
+import { buildDiagnosisHandoffBrief } from "@/lib/diagnosis-handoff";
 import {
   getDiagnosisReviewStatusLabel,
   getInterviewRailLabel,
@@ -35,6 +36,11 @@ export default async function DiagnosisDetailPage({
   }
 
   const diagnosis = interview.diagnosisRecord;
+  const completedInterview = {
+    ...interview,
+    diagnosisRecord: diagnosis,
+  };
+  const handoffBrief = buildDiagnosisHandoffBrief(completedInterview);
 
   async function saveFollowUpAction(formData: FormData) {
     "use server";
@@ -170,6 +176,35 @@ export default async function DiagnosisDetailPage({
             </button>
           </div>
         </form>
+      </section>
+
+      <section className="app-card flex flex-col gap-4 p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-1">
+            <h2 className="display-title text-2xl font-semibold">Handoff brief</h2>
+            <p className="muted text-sm leading-6">
+              Use this plain-text brief when escalating the issue to a site lead, project owner, or regional manager.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href={`/history/${sessionId}/brief`}
+              className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 text-sm font-medium"
+            >
+              Open plain text
+            </Link>
+            <Link
+              href={`/history/${sessionId}/brief?download=1`}
+              className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-accent-foreground)]"
+            >
+              Download brief
+            </Link>
+          </div>
+        </div>
+
+        <pre className="overflow-x-auto rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] p-4 text-xs leading-6 whitespace-pre-wrap">
+          {handoffBrief}
+        </pre>
       </section>
 
       <section className="app-card flex flex-col gap-4 p-6">

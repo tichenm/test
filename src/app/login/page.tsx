@@ -17,7 +17,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const callbackPath = normalizeCallbackPath(params?.callbackUrl);
   const notice = params?.reason === "auth"
     ? "Sign in to continue to the page you asked for."
-    : undefined;
+    : params?.reason === "signed-out"
+      ? "You have signed out. Use your email if you want to start another session."
+      : undefined;
 
   if (session?.user) {
     redirect(callbackPath);
