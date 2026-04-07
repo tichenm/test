@@ -48,6 +48,7 @@ describe("history export", () => {
     expect(csv).toContain("active-1");
     expect(csv).toContain("Active draft");
     expect(csv).toContain("Not specified");
+    expect(csv).toContain("Stockout");
   });
 
   it("escapes commas and quotes in exported fields", () => {

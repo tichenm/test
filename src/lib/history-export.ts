@@ -1,4 +1,5 @@
 import {
+  getDiagnosisPainTypeLabel,
   getDiagnosisReviewStatusLabel,
   getInterviewRailLabel,
 } from "@/lib/interview-presenters";
@@ -88,7 +89,9 @@ export function buildHistoryExportCsv<T extends ExportSession>(sessions: T[]) {
     getInterviewRailLabel(session.railKey),
     formatText(session.storeName, "Not specified"),
     formatText(session.roleName, "Not specified"),
-    formatText(session.diagnosisRecord?.painType, "Not diagnosed"),
+    session.diagnosisRecord
+      ? getDiagnosisPainTypeLabel(session.diagnosisRecord.painType)
+      : "Not diagnosed",
     formatText(session.diagnosisRecord?.severity, "Not diagnosed"),
     session.diagnosisRecord
       ? getDiagnosisReviewStatusLabel(session.diagnosisRecord.reviewStatus)

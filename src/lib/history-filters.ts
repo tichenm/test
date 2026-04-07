@@ -1,9 +1,9 @@
 import {
   isRailKey,
-  type PainType,
   type RailKey,
   type Severity,
 } from "@/lib/diagnostic-rails";
+import { DIAGNOSIS_PAIN_TYPES, type PainType } from "@/lib/pain-types";
 
 type ReviewStatus = "new" | "reviewing" | "accepted" | "resolved";
 type HistoryStatusFilter = "all" | "active" | "completed";
@@ -45,7 +45,6 @@ type HistoryInterviewSession = {
 };
 
 const REVIEW_STATUSES = ["new", "reviewing", "accepted", "resolved"] as const;
-const PAIN_TYPES = ["stockout", "overstock", "inventory-accuracy"] as const;
 const SEVERITIES = ["medium", "high"] as const;
 
 function getSingleValue(value: HistoryFilterValue) {
@@ -82,7 +81,7 @@ export function parseHistoryFilters(params: HistoryFilterParams): HistoryFilters
     reviewStatus: REVIEW_STATUSES.includes(reviewStatusValue as ReviewStatus)
       ? (reviewStatusValue as ReviewStatus)
       : "all",
-    painType: PAIN_TYPES.includes(painTypeValue as PainType)
+    painType: DIAGNOSIS_PAIN_TYPES.includes(painTypeValue as PainType)
       ? (painTypeValue as PainType)
       : "all",
     severity: SEVERITIES.includes(severityValue as Severity)

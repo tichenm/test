@@ -4,6 +4,7 @@ import {
   isRailKey,
   type RailKey,
 } from "@/lib/diagnostic-engine";
+import { getDiagnosisPainTypeLabel as getDiagnosisPainTypeLabelFromTaxonomy } from "@/lib/pain-types";
 
 type InterviewTitleParams = {
   railKey: string;
@@ -20,9 +21,13 @@ export function getInterviewRailLabel(railKey: string) {
   return getDiagnosticRail(normalizeRailKey(railKey)).label;
 }
 
+export function getDiagnosisPainTypeLabel(painType: string) {
+  return getDiagnosisPainTypeLabelFromTaxonomy(painType);
+}
+
 export function getInterviewCardTitle(params: InterviewTitleParams) {
   if (params.diagnosisRecord?.painType) {
-    return params.diagnosisRecord.painType;
+    return getDiagnosisPainTypeLabel(params.diagnosisRecord.painType);
   }
 
   return `${getInterviewRailLabel(params.railKey)} review in progress`;

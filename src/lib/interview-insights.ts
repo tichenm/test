@@ -1,4 +1,7 @@
-import { getInterviewRailLabel } from "@/lib/interview-presenters";
+import {
+  getDiagnosisPainTypeLabel,
+  getInterviewRailLabel,
+} from "@/lib/interview-presenters";
 
 type InsightDiagnosisRecord = {
   painType: string;
@@ -94,7 +97,10 @@ export function buildInterviewInsights(sessions: InsightSession[]): InterviewIns
     incrementCount(actionCounts, session.diagnosisRecord.nextAction);
   }
 
-  const painTypeBreakdown = sortBucketsDescending(painTypeCounts);
+  const painTypeBreakdown = sortBucketsDescending(
+    painTypeCounts,
+    getDiagnosisPainTypeLabel,
+  );
   const topPainType = painTypeBreakdown[0];
 
   return {

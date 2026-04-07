@@ -36,7 +36,7 @@ describe("diagnosis handoff", () => {
     expect(brief).toContain("Workflow: Warehouse receiving");
     expect(brief).toContain("Site: North Hub");
     expect(brief).toContain("Role: Warehouse supervisor");
-    expect(brief).toContain("Pain type: overstock");
+    expect(brief).toContain("Pain type: Overstock");
     expect(brief).toContain("Review status: Reviewing");
     expect(brief).toContain("Owner: Kai");
     expect(brief).toContain("Review note: Pilot the new handoff on Tuesday morning.");
@@ -84,5 +84,30 @@ describe("diagnosis handoff", () => {
         },
       }),
     ).toBe("north-hub-warehouse-receiving-inventory-accuracy-handoff.txt");
+  });
+
+  it("renders manager-friendly pain labels for project rollout diagnoses", () => {
+    const brief = buildDiagnosisHandoffBrief({
+      railKey: "project-rollout-handoff",
+      storeName: "Region East launch",
+      roleName: "Project manager",
+      startedAt: new Date("2026-04-07T09:00:00.000Z"),
+      diagnosisRecord: {
+        painType: "handoff-delay",
+        severity: "high",
+        frequency: "every weekly cutover",
+        timeWindow: "final readiness week",
+        affectedScope: "vendor signoff and site enablement",
+        peopleInvolved: "project manager and regional ops",
+        currentWorkaround: "manual chase messages",
+        operationalImpact: "launch slips by days",
+        likelyRootCause: "Handoff ownership is unclear between rollout and field execution.",
+        nextAction: "Assign one handoff owner and one readiness checkpoint.",
+        aiSummary: "Launch status is stalling on the same cross-team handoff.",
+        reviewStatus: "new",
+      },
+    });
+
+    expect(brief).toContain("Pain type: Handoff delay");
   });
 });

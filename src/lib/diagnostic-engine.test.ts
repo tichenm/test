@@ -247,4 +247,46 @@ describe("diagnostic engine", () => {
       nextAction: expect.stringContaining("cycle count"),
     });
   });
+
+  it("uses project rollout wording for project handoff interviews", () => {
+    const initial = createInterviewState("project-rollout-handoff" as never);
+
+    const afterSymptom = advanceInterview(initial, {
+      painType: "handoff-delay" as never,
+    }).state;
+
+    expect(afterSymptom.currentStep).toBe("frequency-pattern");
+    expect(getCurrentStepDefinition(afterSymptom).prompt(afterSymptom)).toContain(
+      "handoff stalls",
+    );
+  });
+
+  it("builds project-specific diagnosis copy for rollout handoff interviews", () => {
+    let state = createInterviewState("project-rollout-handoff" as never);
+
+    state = advanceInterview(state, { painType: "handoff-delay" as never }).state;
+    state = advanceInterview(state, { frequency: "every launch checkpoint" }).state;
+    state = advanceInterview(state, { timeWindow: "during cross-team handoff windows" }).state;
+    state = advanceInterview(state, {
+      affectedScope: "site readiness signoff and vendor onboarding",
+    }).state;
+    state = advanceInterview(state, {
+      peopleInvolved: "project manager, ops lead, and external vendor owner",
+    }).state;
+    state = advanceInterview(state, {
+      currentWorkaround: "manual status chasing in chat and spreadsheets",
+    }).state;
+    const completion = advanceInterview(state, {
+      operationalImpact: "launch dates slip because nobody trusts the last handoff state",
+    });
+
+    const record = buildDiagnosisRecord(completion.state);
+
+    expect(record).toMatchObject({
+      painType: "handoff-delay",
+      severity: "high",
+      likelyRootCause: expect.stringContaining("handoff"),
+      nextAction: expect.stringContaining("handoff owner"),
+    });
+  });
 });

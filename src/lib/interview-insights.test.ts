@@ -62,7 +62,7 @@ describe("buildInterviewInsights", () => {
       totalSessions: 4,
       completedSessions: 3,
       activeSessions: 1,
-      topPainType: "overstock",
+      topPainType: "Overstock",
       topPainTypeCount: 2,
     });
     expect(insights.railBreakdown).toEqual([
@@ -78,8 +78,8 @@ describe("buildInterviewInsights", () => {
       },
     ]);
     expect(insights.painTypeBreakdown).toEqual([
-      { key: "overstock", label: "overstock", count: 2 },
-      { key: "stockout", label: "stockout", count: 1 },
+      { key: "overstock", label: "Overstock", count: 2 },
+      { key: "stockout", label: "Stockout", count: 1 },
     ]);
     expect(insights.severityBreakdown).toEqual([
       { key: "medium", label: "medium", count: 2 },

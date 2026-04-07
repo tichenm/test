@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  getDiagnosisPainTypeLabel,
   getEmptyHistoryCopy,
   getInterviewCardTitle,
   getDiagnosisReviewStatusLabel,
@@ -16,7 +17,7 @@ describe("interview presenters", () => {
           painType: "overstock",
         },
       }),
-    ).toBe("overstock");
+    ).toBe("Overstock");
   });
 
   it("falls back to the rail label when the diagnosis is still in progress", () => {
@@ -37,6 +38,9 @@ describe("interview presenters", () => {
     );
     expect(getInterviewRailLabel("store-inventory-control")).toBe(
       "Store inventory control",
+    );
+    expect(getInterviewRailLabel("project-rollout-handoff")).toBe(
+      "Project rollout and handoff",
     );
     expect(getInterviewRailLabel("warehouse-receiving")).toBe("Warehouse receiving");
   });
@@ -62,5 +66,12 @@ describe("interview presenters", () => {
     expect(getDiagnosisReviewStatusLabel("accepted")).toBe("Accepted");
     expect(getDiagnosisReviewStatusLabel("resolved")).toBe("Resolved");
     expect(getDiagnosisReviewStatusLabel("unknown")).toBe("New");
+  });
+
+  it("formats diagnosis pain types for manager-facing labels", () => {
+    expect(getDiagnosisPainTypeLabel("stockout")).toBe("Stockout");
+    expect(getDiagnosisPainTypeLabel("inventory-accuracy")).toBe("Inventory accuracy");
+    expect(getDiagnosisPainTypeLabel("handoff-delay")).toBe("Handoff delay");
+    expect(getDiagnosisPainTypeLabel("dependency-blindspot")).toBe("Dependency blindspot");
   });
 });

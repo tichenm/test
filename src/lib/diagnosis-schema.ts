@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { DIAGNOSIS_PAIN_TYPES } from "@/lib/pain-types";
 
 export const diagnosisRecordSchema = z.object({
-  painType: z.enum(["stockout", "overstock", "inventory-accuracy"]),
+  painType: z.enum(DIAGNOSIS_PAIN_TYPES),
   severity: z.enum(["medium", "high"]),
   frequency: z.string().min(1),
   timeWindow: z.string().min(1),

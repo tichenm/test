@@ -152,6 +152,29 @@ describe("interview services", () => {
     );
   });
 
+  it("creates a project rollout handoff session for cross-team launch coordination", async () => {
+    prismaMock.interviewSession.create.mockResolvedValue({ id: "session-project-rollout" });
+
+    await createInterviewSessionForUser("user-1", "project-rollout-handoff" as never);
+
+    expect(generateGuidedQuestionMock).toHaveBeenCalledWith(
+      expect.stringContaining("project rollout"),
+      expect.objectContaining({
+        railKey: "project-rollout-handoff",
+      }),
+    );
+    expect(prismaMock.interviewSession.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          railKey: "project-rollout-handoff",
+          state: expect.objectContaining({
+            railKey: "project-rollout-handoff",
+          }),
+        }),
+      }),
+    );
+  });
+
   it("stores a trimmed store name when the diagnosis starts with location context", async () => {
     prismaMock.interviewSession.create.mockResolvedValue({ id: "session-store-1" });
 

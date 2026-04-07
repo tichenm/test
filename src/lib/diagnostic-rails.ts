@@ -1,12 +1,12 @@
 import type { DiagnosisRecord } from "@/lib/diagnosis-schema";
+import type { PainType } from "@/lib/pain-types";
 
 export type RailKey =
   | "inventory-replenishment"
   | "store-stock-replenishment"
   | "store-inventory-control"
+  | "project-rollout-handoff"
   | "warehouse-receiving";
-
-export type PainType = "stockout" | "overstock" | "inventory-accuracy";
 export type Severity = "medium" | "high";
 
 export type DiagnosisFields = {
@@ -435,6 +435,111 @@ const storeInventoryControlRail: DiagnosticRail = {
   },
 };
 
+const projectRolloutHandoffRail: DiagnosticRail = {
+  key: "project-rollout-handoff",
+  label: "Project rollout and handoff",
+  workbenchSummary:
+    "Turn fuzzy rollout slippage into a concrete cross-team delivery diagnosis, with one next handoff move for the project lead.",
+  interviewContextLabel: "Project rollout and handoff",
+  stepOrder: sharedStepOrder,
+  steps: {
+    "problem-symptom": {
+      key: "problem-symptom",
+      field: "painType",
+      prompt: () =>
+        "In the project rollout, what goes wrong most often, handoff delay, execution drift, or dependency blindspot?",
+    },
+    "frequency-pattern": {
+      key: "frequency-pattern",
+      field: "frequency",
+      prompt: (state) =>
+        state.fields.painType === "handoff-delay"
+          ? "How often do handoff stalls block the next team from moving?"
+          : "How often does this rollout issue show up?",
+    },
+    "time-window": {
+      key: "time-window",
+      field: "timeWindow",
+      prompt: () =>
+        "When does the issue show up most often, planning kickoff, readiness review, launch week, or post-launch cleanup?",
+    },
+    "affected-scope": {
+      key: "affected-scope",
+      field: "affectedScope",
+      prompt: () =>
+        "Which workstream, milestone, site, or vendor dependency gets hit most often?",
+    },
+    "people-involved": {
+      key: "people-involved",
+      field: "peopleInvolved",
+      prompt: () =>
+        "Who is usually involved when the rollout gets stuck, project lead, ops, vendor owner, or regional team?",
+    },
+    "current-workaround": {
+      key: "current-workaround",
+      field: "currentWorkaround",
+      prompt: () =>
+        "How is the team currently working around the rollout or handoff gap?",
+    },
+    "operational-impact": {
+      key: "operational-impact",
+      field: "operationalImpact",
+      prompt: () =>
+        "What operational impact does this create for launch timing, readiness, or field execution?",
+    },
+  },
+  buildDiagnosis: (fields) => {
+    if (fields.painType === "handoff-delay") {
+      return {
+        painType: fields.painType,
+        severity: "high",
+        frequency: fields.frequency,
+        timeWindow: fields.timeWindow,
+        affectedScope: fields.affectedScope,
+        peopleInvolved: fields.peopleInvolved,
+        currentWorkaround: fields.currentWorkaround,
+        operationalImpact: fields.operationalImpact,
+        likelyRootCause:
+          "The rollout handoff is stalling because ownership changes between planning, execution, and field teams are not explicit enough to survive real launch pressure.",
+        nextAction:
+          "Assign one handoff owner for the affected milestone and run the next checkpoint against a single shared readiness view.",
+      };
+    }
+
+    if (fields.painType === "dependency-blindspot") {
+      return {
+        painType: fields.painType,
+        severity: "medium",
+        frequency: fields.frequency,
+        timeWindow: fields.timeWindow,
+        affectedScope: fields.affectedScope,
+        peopleInvolved: fields.peopleInvolved,
+        currentWorkaround: fields.currentWorkaround,
+        operationalImpact: fields.operationalImpact,
+        likelyRootCause:
+          "The project plan is missing one or more real dependencies, so downstream teams discover readiness gaps only when the launch is already moving.",
+        nextAction:
+          "Pick the missed dependency that caused the last slip and add a named readiness check before the next launch gate.",
+      };
+    }
+
+    return {
+      painType: fields.painType,
+      severity: "medium",
+      frequency: fields.frequency,
+      timeWindow: fields.timeWindow,
+      affectedScope: fields.affectedScope,
+      peopleInvolved: fields.peopleInvolved,
+      currentWorkaround: fields.currentWorkaround,
+      operationalImpact: fields.operationalImpact,
+      likelyRootCause:
+        "Execution is drifting across teams because rollout expectations are clear in planning but too loose in day-to-day delivery and status ownership.",
+      nextAction:
+        "Choose one slipping workstream and tighten the owner, due date, and proof-of-complete definition before the next rollout review.",
+    };
+  },
+};
+
 const warehouseReceivingRail: DiagnosticRail = {
   key: "warehouse-receiving",
   label: "Warehouse receiving",
@@ -509,6 +614,7 @@ const diagnosticRails: Record<RailKey, DiagnosticRail> = {
   "inventory-replenishment": inventoryReplenishmentRail,
   "store-stock-replenishment": storeStockReplenishmentRail,
   "store-inventory-control": storeInventoryControlRail,
+  "project-rollout-handoff": projectRolloutHandoffRail,
   "warehouse-receiving": warehouseReceivingRail,
 };
 

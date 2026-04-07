@@ -12,11 +12,13 @@ import {
 } from "@/lib/history-filters";
 import { listInterviewSessionsForUser } from "@/lib/interviews";
 import {
+  getDiagnosisPainTypeLabel,
   getDiagnosisReviewStatusLabel,
   getEmptyHistoryCopy,
   getInterviewCardTitle,
   getInterviewRailLabel,
 } from "@/lib/interview-presenters";
+import { DIAGNOSIS_PAIN_TYPES } from "@/lib/pain-types";
 
 type HistoryPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -49,6 +51,7 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
       filters.railKey !== "all" ||
       filters.reviewStatus !== "all" ||
       filters.painType !== "all" ||
+      filters.severity !== "all" ||
       filters.storeName ||
       filters.roleName ||
       filters.query,
@@ -149,9 +152,11 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
                 className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] px-4"
               >
                 <option value="all">All pain types</option>
-                <option value="stockout">Stockout</option>
-                <option value="overstock">Overstock</option>
-                <option value="inventory-accuracy">Inventory accuracy</option>
+                {DIAGNOSIS_PAIN_TYPES.map((painType) => (
+                  <option key={painType} value={painType}>
+                    {getDiagnosisPainTypeLabel(painType)}
+                  </option>
+                ))}
               </select>
             </label>
 

@@ -1,4 +1,8 @@
-import { getInterviewRailLabel, getDiagnosisReviewStatusLabel } from "@/lib/interview-presenters";
+import {
+  getInterviewRailLabel,
+  getDiagnosisPainTypeLabel,
+  getDiagnosisReviewStatusLabel,
+} from "@/lib/interview-presenters";
 
 type HandoffDiagnosisRecord = {
   painType: string;
@@ -58,7 +62,7 @@ export function buildDiagnosisHandoffBrief(interview: HandoffInterview) {
     `Role: ${formatText(interview.roleName, "Not specified")}`,
     `Logged: ${formatTimestamp(interview.startedAt)}`,
     "",
-    `Pain type: ${diagnosis.painType}`,
+    `Pain type: ${getDiagnosisPainTypeLabel(diagnosis.painType)}`,
     `Severity: ${diagnosis.severity}`,
     `Review status: ${getDiagnosisReviewStatusLabel(diagnosis.reviewStatus)}`,
     `Owner: ${formatText(diagnosis.ownerName, "Unassigned")}`,

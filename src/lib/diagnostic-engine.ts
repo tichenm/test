@@ -106,7 +106,13 @@ export function buildDiagnosisRecord(state: InterviewState): DiagnosisRecord {
   }));
 }
 
-export type { DiagnosisFields, InterviewState, RailKey, StepDefinition } from "@/lib/diagnostic-rails";
+export type {
+  DiagnosisFields,
+  InterviewState,
+  RailKey,
+  StepDefinition,
+} from "@/lib/diagnostic-rails";
+export type { PainType } from "@/lib/pain-types";
 export {
   DEFAULT_RAIL_KEY,
   getDiagnosticRail,
