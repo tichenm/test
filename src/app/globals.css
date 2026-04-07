@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+:root {
+  --color-bg: #f6f1e7;
+  --color-surface: #fffaf2;
+  --color-surface-strong: #ffffff;
+  --color-text: #1e1c17;
+  --color-text-muted: #6a6356;
+  --color-border: #d9cebd;
+  --color-accent: #a65520;
+  --color-accent-foreground: #fff8f2;
+  --color-success: #6f7f45;
+  --color-error: #9a3e32;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 26px;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+}
+
+@theme inline {
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-text);
+  --font-sans: "Avenir Next", "Segoe UI", sans-serif;
+  --font-display: "Trebuchet MS", "Avenir Next", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(202, 148, 98, 0.18), transparent 32%),
+    linear-gradient(180deg, #faf4ea 0%, var(--color-bg) 28%, #f3ede3 100%);
+  color: var(--color-text);
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+}
+
+a,
+button,
+input,
+textarea {
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid rgba(166, 85, 32, 0.32);
+  outline-offset: 2px;
+}
+
+.app-card {
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-surface) 92%, white 8%);
+  border-radius: var(--radius-lg);
+}
+
+.display-title {
+  font-family: "Trebuchet MS", "Avenir Next", sans-serif;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}

@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String             @id @default(cuid())
+  name             String?
+  email            String?            @unique
+  emailVerified    DateTime?
+  image            String?
+  createdAt        DateTime           @default(now())
+  lastLoginAt      DateTime?
+  accounts         Account[]
+  sessions         Session[]
+  interviewSessions InterviewSession[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model InterviewSession {
+  id              String            @id @default(cuid())
+  userId          String
+  storeName       String?
+  status          InterviewStatus   @default(ACTIVE)
+  railKey         String
+  state           Json
+  startedAt       DateTime          @default(now())
+  completedAt     DateTime?
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages        InterviewMessage[]
+  diagnosisRecord DiagnosisRecord?
+}
+
+model InterviewMessage {
+  id         String       @id @default(cuid())
+  sessionId  String
+  role       MessageRole
+  stepKey    String?
+  content    String       @db.Text
+  createdAt  DateTime     @default(now())
+  session    InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model DiagnosisRecord {
+  id                 String           @id @default(cuid())
+  sessionId          String           @unique
+  painType           String
+  severity           String
+  frequency          String
+  timeWindow         String
+  affectedScope      String
+  peopleInvolved     String
+  currentWorkaround  String           @db.Text
+  operationalImpact  String           @db.Text
+  likelyRootCause    String           @db.Text
+  nextAction         String           @db.Text
+  aiSummary          String           @db.Text
+  reviewStatus       String           @default("new")
+  ownerName          String?
+  reviewNote         String?          @db.Text
+  createdAt          DateTime         @default(now())
+  session            InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+enum InterviewStatus {
+  ACTIVE
+  COMPLETED
+  ABANDONED
+}
+
+enum MessageRole {
+  SYSTEM
+  ASSISTANT
+  USER
+}
