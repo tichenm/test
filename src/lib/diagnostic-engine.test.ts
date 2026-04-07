@@ -205,4 +205,46 @@ describe("diagnostic engine", () => {
       nextAction: expect.stringContaining("compare store sell-through"),
     });
   });
+
+  it("uses inventory-control wording for store inventory control interviews", () => {
+    const initial = createInterviewState("store-inventory-control" as never);
+
+    const afterSymptom = advanceInterview(initial, {
+      painType: "inventory-accuracy",
+    }).state;
+
+    expect(afterSymptom.currentStep).toBe("frequency-pattern");
+    expect(getCurrentStepDefinition(afterSymptom).prompt(afterSymptom)).toContain(
+      "counts drift",
+    );
+  });
+
+  it("builds rail-specific diagnosis copy for store inventory control interviews", () => {
+    let state = createInterviewState("store-inventory-control" as never);
+
+    state = advanceInterview(state, { painType: "inventory-accuracy" }).state;
+    state = advanceInterview(state, { frequency: "three times a week" }).state;
+    state = advanceInterview(state, { timeWindow: "during closing cycle counts" }).state;
+    state = advanceInterview(state, {
+      affectedScope: "front promo shelves and the backroom reserve rack",
+    }).state;
+    state = advanceInterview(state, {
+      peopleInvolved: "store supervisors and closing associates",
+    }).state;
+    state = advanceInterview(state, {
+      currentWorkaround: "manual recounts and WhatsApp photo checks",
+    }).state;
+    const completion = advanceInterview(state, {
+      operationalImpact: "replenishment decisions keep using the wrong on-hand number",
+    });
+
+    const record = buildDiagnosisRecord(completion.state);
+
+    expect(record).toMatchObject({
+      painType: "inventory-accuracy",
+      severity: "medium",
+      likelyRootCause: expect.stringContaining("inventory control"),
+      nextAction: expect.stringContaining("cycle count"),
+    });
+  });
 });

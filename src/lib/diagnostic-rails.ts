@@ -3,6 +3,7 @@ import type { DiagnosisRecord } from "@/lib/diagnosis-schema";
 export type RailKey =
   | "inventory-replenishment"
   | "store-stock-replenishment"
+  | "store-inventory-control"
   | "warehouse-receiving";
 
 export type PainType = "stockout" | "overstock" | "inventory-accuracy";
@@ -329,6 +330,111 @@ const storeStockReplenishmentRail: DiagnosticRail = {
   },
 };
 
+const storeInventoryControlRail: DiagnosticRail = {
+  key: "store-inventory-control",
+  label: "Store inventory control",
+  workbenchSummary:
+    "Turn recurring count drift, shelf mismatch, and backroom confusion into a clear inventory-control diagnosis, with one next action for the supervisor.",
+  interviewContextLabel: "Store inventory control",
+  stepOrder: sharedStepOrder,
+  steps: {
+    "problem-symptom": {
+      key: "problem-symptom",
+      field: "painType",
+      prompt: () =>
+        "In the store, what goes wrong most often, stockouts, overstock, or inventory accuracy drift?",
+    },
+    "frequency-pattern": {
+      key: "frequency-pattern",
+      field: "frequency",
+      prompt: (state) =>
+        state.fields.painType === "inventory-accuracy"
+          ? "How often do counts drift away from what the shelf or backroom really has?"
+          : "How often does this store inventory control issue show up?",
+    },
+    "time-window": {
+      key: "time-window",
+      field: "timeWindow",
+      prompt: () =>
+        "When does the mismatch show up most often, during cycle counts, shift changes, after deliveries, or after promo resets?",
+    },
+    "affected-scope": {
+      key: "affected-scope",
+      field: "affectedScope",
+      prompt: () =>
+        "Which shelves, categories, backroom locations, or count routines are affected most often?",
+    },
+    "people-involved": {
+      key: "people-involved",
+      field: "peopleInvolved",
+      prompt: () =>
+        "Who is usually involved when the mismatch appears, floor staff, stock controllers, shift leads, or receiving?",
+    },
+    "current-workaround": {
+      key: "current-workaround",
+      field: "currentWorkaround",
+      prompt: () =>
+        "How is the team currently working around the count drift or shelf mismatch?",
+    },
+    "operational-impact": {
+      key: "operational-impact",
+      field: "operationalImpact",
+      prompt: () =>
+        "What operational impact does this create for replenishment, customer availability, or recount effort?",
+    },
+  },
+  buildDiagnosis: (fields) => {
+    if (fields.painType === "inventory-accuracy") {
+      return {
+        painType: fields.painType,
+        severity: "medium",
+        frequency: fields.frequency,
+        timeWindow: fields.timeWindow,
+        affectedScope: fields.affectedScope,
+        peopleInvolved: fields.peopleInvolved,
+        currentWorkaround: fields.currentWorkaround,
+        operationalImpact: fields.operationalImpact,
+        likelyRootCause:
+          "Store inventory control is drifting between shelf activity, backroom handling, and count discipline, so recorded stock no longer matches the floor.",
+        nextAction:
+          "Pick one high-noise category and compare shelf, backroom, and system counts together during the next cycle count.",
+      };
+    }
+
+    if (fields.painType === "stockout") {
+      return {
+        painType: fields.painType,
+        severity: "high",
+        frequency: fields.frequency,
+        timeWindow: fields.timeWindow,
+        affectedScope: fields.affectedScope,
+        peopleInvolved: fields.peopleInvolved,
+        currentWorkaround: fields.currentWorkaround,
+        operationalImpact: fields.operationalImpact,
+        likelyRootCause:
+          "Inventory control is overstating sellable stock, so replenishment reacts too late and the shelf goes empty before the mismatch is caught.",
+        nextAction:
+          "Audit one repeated stockout SKU across shelf, backroom, and system counts before the next replenishment decision.",
+      };
+    }
+
+    return {
+      painType: fields.painType,
+      severity: "medium",
+      frequency: fields.frequency,
+      timeWindow: fields.timeWindow,
+      affectedScope: fields.affectedScope,
+      peopleInvolved: fields.peopleInvolved,
+      currentWorkaround: fields.currentWorkaround,
+      operationalImpact: fields.operationalImpact,
+      likelyRootCause:
+        "Store inventory control is out of sync with physical handling, so stock piles up in the wrong location or gets corrected too late to trust the on-hand number.",
+      nextAction:
+        "Trace one overstocked SKU from delivery to shelf and verify each location before the next cycle count closes.",
+    };
+  },
+};
+
 const warehouseReceivingRail: DiagnosticRail = {
   key: "warehouse-receiving",
   label: "Warehouse receiving",
@@ -402,6 +508,7 @@ export const DEFAULT_RAIL_KEY: RailKey = "inventory-replenishment";
 const diagnosticRails: Record<RailKey, DiagnosticRail> = {
   "inventory-replenishment": inventoryReplenishmentRail,
   "store-stock-replenishment": storeStockReplenishmentRail,
+  "store-inventory-control": storeInventoryControlRail,
   "warehouse-receiving": warehouseReceivingRail,
 };
 

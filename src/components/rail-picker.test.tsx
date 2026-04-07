@@ -15,6 +15,7 @@ describe("RailPicker", () => {
 
     expect(screen.getByText("Inventory and replenishment")).toBeInTheDocument();
     expect(screen.getByText("Store stock and replenishment")).toBeInTheDocument();
+    expect(screen.getByText("Store inventory control")).toBeInTheDocument();
     expect(screen.getByText("Warehouse receiving")).toBeInTheDocument();
     expect(screen.getByLabelText("Store or site")).toBeInTheDocument();
     expect(screen.getByLabelText("Role or function")).toBeInTheDocument();
@@ -28,11 +29,16 @@ describe("RailPicker", () => {
     const storeButton = screen.getByRole("button", {
       name: "Start store stock and replenishment diagnosis",
     });
+    const controlButton = screen.getByRole("button", {
+      name: "Start store inventory control diagnosis",
+    });
 
     expect(inventoryButton).toHaveAttribute("name", "railKey");
     expect(inventoryButton).toHaveAttribute("value", "inventory-replenishment");
     expect(storeButton).toHaveAttribute("name", "railKey");
     expect(storeButton).toHaveAttribute("value", "store-stock-replenishment");
+    expect(controlButton).toHaveAttribute("name", "railKey");
+    expect(controlButton).toHaveAttribute("value", "store-inventory-control");
     expect(warehouseButton).toHaveAttribute("name", "railKey");
     expect(warehouseButton).toHaveAttribute("value", "warehouse-receiving");
   });

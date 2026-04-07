@@ -129,6 +129,29 @@ describe("interview services", () => {
     );
   });
 
+  it("creates a store inventory control session for supervisor count-drift workflows", async () => {
+    prismaMock.interviewSession.create.mockResolvedValue({ id: "session-store-control" });
+
+    await createInterviewSessionForUser("user-1", "store-inventory-control" as never);
+
+    expect(generateGuidedQuestionMock).toHaveBeenCalledWith(
+      expect.stringContaining("what goes wrong most often"),
+      expect.objectContaining({
+        railKey: "store-inventory-control",
+      }),
+    );
+    expect(prismaMock.interviewSession.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          railKey: "store-inventory-control",
+          state: expect.objectContaining({
+            railKey: "store-inventory-control",
+          }),
+        }),
+      }),
+    );
+  });
+
   it("stores a trimmed store name when the diagnosis starts with location context", async () => {
     prismaMock.interviewSession.create.mockResolvedValue({ id: "session-store-1" });
 
