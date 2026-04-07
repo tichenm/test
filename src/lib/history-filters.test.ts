@@ -17,6 +17,7 @@ const sessions = [
     startedAt: new Date("2026-04-06T08:00:00.000Z"),
     diagnosisRecord: {
       painType: "stockout",
+      severity: "high",
       reviewStatus: "new",
       likelyRootCause: "Late replenishment handoff",
       nextAction: "Review replenishment timing",
@@ -34,6 +35,7 @@ const sessions = [
     startedAt: new Date("2026-04-06T09:00:00.000Z"),
     diagnosisRecord: {
       painType: "overstock",
+      severity: "medium",
       reviewStatus: "reviewing",
       likelyRootCause: "Putaway handoff is unclear",
       nextAction: "Review receiving handoff",
@@ -70,6 +72,7 @@ describe("history filters", () => {
       railKey: "all",
       reviewStatus: "all",
       painType: "all",
+      severity: "all",
       storeName: "Store 12",
       roleName: "Store manager",
       query: "weekend",
@@ -119,5 +122,19 @@ describe("history filters", () => {
     ).toBe("/history?railKey=warehouse-receiving&reviewStatus=reviewing&q=dock+3");
 
     expect(buildHistoryFilterHref({})).toBe("/history");
+  });
+
+  it("supports exact severity filtering for insights drilldowns", () => {
+    const filters = parseHistoryFilters({
+      status: "completed",
+      severity: "high",
+    });
+
+    expect(filterInterviewSessions(sessions, filters).map((session) => session.id)).toEqual([
+      "completed-1",
+    ]);
+    expect(buildHistoryFilterHref({ status: "completed", severity: "high" })).toBe(
+      "/history?status=completed&severity=high",
+    );
   });
 });

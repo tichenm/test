@@ -29,6 +29,7 @@ type ExportHrefFilters = {
   railKey?: string;
   reviewStatus?: string;
   painType?: string;
+  severity?: string;
   storeName?: string;
   roleName?: string;
   query?: string;
@@ -53,11 +54,13 @@ function formatTimestamp(value: Date) {
 }
 
 function escapeCsvValue(value: string) {
-  if (/[",\n]/.test(value)) {
-    return `"${value.replace(/"/g, "\"\"")}"`;
+  const neutralizedValue = /^[=+\-@]/.test(value) ? `'${value}` : value;
+
+  if (/[",\n]/.test(neutralizedValue)) {
+    return `"${neutralizedValue.replace(/"/g, "\"\"")}"`;
   }
 
-  return value;
+  return neutralizedValue;
 }
 
 export function buildHistoryExportCsv<T extends ExportSession>(sessions: T[]) {
@@ -124,6 +127,10 @@ export function buildHistoryExportHref(filters: ExportHrefFilters) {
 
   if (filters.painType && filters.painType !== "all") {
     searchParams.set("painType", filters.painType);
+  }
+
+  if (filters.severity && filters.severity !== "all") {
+    searchParams.set("severity", filters.severity);
   }
 
   if (filters.storeName) {

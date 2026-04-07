@@ -28,6 +28,7 @@ describe("auth navigation", () => {
     expect(normalizeCallbackPath("http://localhost:3000/history/export?status=completed")).toBe(
       "/history/export?status=completed",
     );
+    expect(normalizeCallbackPath("//evil.com/path")).toBe("/");
     expect(normalizeCallbackPath(undefined)).toBe("/");
   });
 
@@ -47,6 +48,16 @@ describe("auth navigation", () => {
       ),
     ).toBe(
       "http://127.0.0.1:3000/api/auth/callback/email?callbackUrl=http%3A%2F%2F127.0.0.1%3A3000%2Fhistory&token=abc&email=test%40store.com",
+    );
+  });
+
+  it("refuses to rewrite verification links to untrusted callback origins", () => {
+    expect(
+      rewriteVerificationUrlToCallbackOrigin(
+        "http://localhost:3000/api/auth/callback/email?callbackUrl=https%3A%2F%2Fevil.example%2Fhistory&token=abc&email=test%40store.com",
+      ),
+    ).toBe(
+      "http://localhost:3000/api/auth/callback/email?callbackUrl=https%3A%2F%2Fevil.example%2Fhistory&token=abc&email=test%40store.com",
     );
   });
 

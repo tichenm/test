@@ -1,4 +1,9 @@
-import { isRailKey, type PainType, type RailKey } from "@/lib/diagnostic-rails";
+import {
+  isRailKey,
+  type PainType,
+  type RailKey,
+  type Severity,
+} from "@/lib/diagnostic-rails";
 
 type ReviewStatus = "new" | "reviewing" | "accepted" | "resolved";
 type HistoryStatusFilter = "all" | "active" | "completed";
@@ -13,6 +18,7 @@ type HistoryFilters = {
   railKey: HistoryExactFilter<RailKey>;
   reviewStatus: HistoryExactFilter<ReviewStatus>;
   painType: HistoryExactFilter<PainType>;
+  severity: HistoryExactFilter<Severity>;
   storeName: string;
   roleName: string;
   query: string;
@@ -40,6 +46,7 @@ type HistoryInterviewSession = {
 
 const REVIEW_STATUSES = ["new", "reviewing", "accepted", "resolved"] as const;
 const PAIN_TYPES = ["stockout", "overstock", "inventory-accuracy"] as const;
+const SEVERITIES = ["medium", "high"] as const;
 
 function getSingleValue(value: HistoryFilterValue) {
   if (Array.isArray(value)) {
@@ -66,6 +73,7 @@ export function parseHistoryFilters(params: HistoryFilterParams): HistoryFilters
   const railKeyValue = normalizeText(params.railKey);
   const reviewStatusValue = normalizeLowercase(normalizeText(params.reviewStatus));
   const painTypeValue = normalizeLowercase(normalizeText(params.painType));
+  const severityValue = normalizeLowercase(normalizeText(params.severity));
 
   return {
     status:
@@ -76,6 +84,9 @@ export function parseHistoryFilters(params: HistoryFilterParams): HistoryFilters
       : "all",
     painType: PAIN_TYPES.includes(painTypeValue as PainType)
       ? (painTypeValue as PainType)
+      : "all",
+    severity: SEVERITIES.includes(severityValue as Severity)
+      ? (severityValue as Severity)
       : "all",
     storeName: normalizeText(params.storeName),
     roleName: normalizeText(params.roleName),
@@ -118,6 +129,12 @@ export function filterInterviewSessions<T extends HistoryInterviewSession>(
 
     if (filters.painType !== "all") {
       if (session.diagnosisRecord?.painType !== filters.painType) {
+        return false;
+      }
+    }
+
+    if (filters.severity !== "all") {
+      if (session.diagnosisRecord?.severity !== filters.severity) {
         return false;
       }
     }
@@ -182,6 +199,10 @@ export function buildHistoryFilterHref(partialFilters: Partial<HistoryFilters>) 
 
   if (filters.painType !== "all") {
     searchParams.set("painType", filters.painType);
+  }
+
+  if (filters.severity !== "all") {
+    searchParams.set("severity", filters.severity);
   }
 
   if (filters.storeName) {

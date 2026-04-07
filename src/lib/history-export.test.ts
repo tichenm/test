@@ -76,6 +76,37 @@ describe("history export", () => {
     expect(csv).toContain("\"Dock 3, line 2 handoff is unclear\"");
   });
 
+  it("neutralizes spreadsheet formula prefixes in exported cells", () => {
+    const csv = buildHistoryExportCsv([
+      {
+        id: "completed-3",
+        railKey: "inventory-replenishment",
+        storeName: "=cmd|'/C calc'!A0",
+        roleName: "+Regional lead",
+        status: "COMPLETED" as const,
+        startedAt: new Date("2026-04-06T09:00:00.000Z"),
+        diagnosisRecord: {
+          painType: "stockout",
+          severity: "high",
+          reviewStatus: "new",
+          likelyRootCause: "-Untrusted root cause",
+          nextAction: "@Open the spreadsheet",
+          ownerName: "=owner",
+          reviewNote: "+note",
+          aiSummary: "-summary",
+        },
+      },
+    ]);
+
+    expect(csv).toContain("'=cmd|'/C calc'!A0");
+    expect(csv).toContain("'+Regional lead");
+    expect(csv).toContain("'-Untrusted root cause");
+    expect(csv).toContain("'@Open the spreadsheet");
+    expect(csv).toContain("'=owner");
+    expect(csv).toContain("'+note");
+    expect(csv).toContain("'-summary");
+  });
+
   it("creates a dated filename for filtered history exports", () => {
     expect(buildHistoryExportFilename(new Date("2026-04-06T12:00:00.000Z"))).toBe(
       "guided-pain-history-2026-04-06.csv",

@@ -202,7 +202,7 @@ export default async function InsightsPage() {
                 ...item,
                 href: buildHistoryFilterHref({
                   status: "completed",
-                  query: item.key,
+                  severity: item.key as "medium" | "high",
                 }),
               }))}
             />

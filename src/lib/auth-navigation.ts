@@ -13,6 +13,10 @@ export function normalizeCallbackPath(callbackPath?: string) {
     return "/";
   }
 
+  if (callbackPath.startsWith("//")) {
+    return "/";
+  }
+
   if (callbackPath.startsWith("http://") || callbackPath.startsWith("https://")) {
     const parsed = new URL(callbackPath);
     return `${parsed.pathname || "/"}${parsed.search}`;
@@ -64,7 +68,17 @@ export function rewriteVerificationUrlToCallbackOrigin(verificationUrl: string) 
     return verificationUrl;
   }
 
-  const callbackOrigin = new URL(callbackUrl, rewrittenUrl.origin).origin;
+  const resolvedCallbackUrl = new URL(callbackUrl, rewrittenUrl.origin).toString();
+  const trustedCallbackUrl = resolveTrustedRedirectUrl(
+    resolvedCallbackUrl,
+    rewrittenUrl.origin,
+  );
+
+  if (trustedCallbackUrl !== resolvedCallbackUrl) {
+    return verificationUrl;
+  }
+
+  const callbackOrigin = new URL(resolvedCallbackUrl).origin;
   rewrittenUrl.protocol = new URL(callbackOrigin).protocol;
   rewrittenUrl.host = new URL(callbackOrigin).host;
   return rewrittenUrl.toString();
