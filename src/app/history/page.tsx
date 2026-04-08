@@ -6,11 +6,15 @@ import { buildLoginRedirect } from "@/lib/auth-navigation";
 import { listDiagnosticRails } from "@/lib/diagnostic-engine";
 import { buildHistoryExportHref } from "@/lib/history-export";
 import {
+  buildHistoryFilterHref,
   buildHistoryFilterOptions,
   filterInterviewSessions,
   parseHistoryFilters,
 } from "@/lib/history-filters";
-import { listInterviewSessionsForUser } from "@/lib/interviews";
+import {
+  listInterviewSessionsForUser,
+  updateDiagnosisFollowUpForUser,
+} from "@/lib/interviews";
 import {
   getDiagnosisPainTypeLabel,
   getDiagnosisReviewStatusLabel,
@@ -93,6 +97,7 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
   const filterOptions = buildHistoryFilterOptions(interviews);
   const rails = listDiagnosticRails();
   const priorityQueue = buildPriorityQueue(filteredInterviews);
+  const historyHref = buildHistoryFilterHref(filters);
   const hasActiveFilters = Boolean(
     filters.status !== "all" ||
       filters.railKey !== "all" ||
@@ -103,6 +108,26 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
       filters.roleName ||
       filters.query,
   );
+
+  async function saveInlineFollowUpAction(formData: FormData) {
+    "use server";
+
+    const currentSession = await getAuthSession();
+
+    if (!currentSession?.user?.id) {
+      redirect(buildLoginRedirect(historyHref));
+    }
+
+    await updateDiagnosisFollowUpForUser({
+      userId: currentSession.user.id,
+      sessionId: String(formData.get("sessionId") || ""),
+      reviewStatus: String(formData.get("reviewStatus") || "new"),
+      ownerName: String(formData.get("ownerName") || ""),
+      reviewNote: "",
+    });
+
+    redirect(historyHref);
+  }
 
   return (
     <main className="flex flex-1 flex-col gap-5 pb-8 pt-4">
@@ -373,50 +398,133 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
 
           <section className="grid gap-3">
             {filteredInterviews.map((item) => (
-              <a
-                key={item.id}
-                href={item.status === "COMPLETED" ? `/history/${item.id}` : `/interview/${item.id}`}
-                className="app-card flex flex-col gap-3 p-5"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
-                      {item.status === "COMPLETED" ? "已完成" : "进行中的草稿"}
-                    </span>
-                    {item.status === "COMPLETED" && item.diagnosisRecord ? (
+              item.status === "COMPLETED" && item.diagnosisRecord ? (
+                <section key={item.id} className="app-card flex flex-col gap-4 p-5">
+                  <a href={`/history/${item.id}`} className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
+                          已完成
+                        </span>
+                        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                          {getDiagnosisReviewStatusLabel(item.diagnosisRecord.reviewStatus)}
+                        </span>
+                        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                          {getInterviewRailLabel(item.railKey)}
+                        </span>
+                        {item.storeName ? (
+                          <span className="text-xs uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                            {item.storeName}
+                          </span>
+                        ) : null}
+                        {item.roleName ? (
+                          <span className="text-xs uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                            {item.roleName}
+                          </span>
+                        ) : null}
+                      </div>
+                      <span className="text-sm text-[var(--color-text-muted)]">
+                        {formatTimestamp(item.startedAt)}
+                      </span>
+                    </div>
+                    <h2 className="display-title text-xl font-semibold">
+                      {getInterviewCardTitle({
+                        railKey: item.railKey,
+                        diagnosisRecord: item.diagnosisRecord,
+                      }).replace("-", " ")}
+                    </h2>
+                    <p className="muted text-sm leading-6">
+                      {item.diagnosisRecord.nextAction}
+                    </p>
+                  </a>
+
+                  <form
+                    action={saveInlineFollowUpAction}
+                    className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] p-4"
+                  >
+                    <input type="hidden" name="sessionId" value={item.id} />
+                    <div className="flex flex-wrap items-center gap-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
+                        快速跟进
+                      </p>
+                      <span className="text-xs text-[var(--color-text-muted)]">
+                        直接更新状态和负责人，不必先进入详情页。
+                      </span>
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-[0.9fr_1.1fr_auto]">
+                      <label className="grid gap-2 text-sm font-medium">
+                        跟进状态
+                        <select
+                          name="reviewStatus"
+                          defaultValue={item.diagnosisRecord.reviewStatus}
+                          className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4"
+                        >
+                          <option value="new">待跟进</option>
+                          <option value="reviewing">跟进中</option>
+                          <option value="accepted">已采纳</option>
+                          <option value="resolved">已解决</option>
+                        </select>
+                      </label>
+                      <label className="grid gap-2 text-sm font-medium">
+                        负责人
+                        <input
+                          name="ownerName"
+                          defaultValue={item.diagnosisRecord.ownerName ?? ""}
+                          placeholder="例如：区域经理、站点负责人"
+                          className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4"
+                        />
+                      </label>
+                      <div className="flex items-end">
+                        <button
+                          type="submit"
+                          className="min-h-11 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 text-sm font-semibold text-[var(--color-accent-foreground)]"
+                        >
+                          更新跟进
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </section>
+              ) : (
+                <a
+                  key={item.id}
+                  href={`/interview/${item.id}`}
+                  className="app-card flex flex-col gap-3 p-5"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
+                        进行中的草稿
+                      </span>
                       <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                        {getDiagnosisReviewStatusLabel(item.diagnosisRecord.reviewStatus)}
+                        {getInterviewRailLabel(item.railKey)}
                       </span>
-                    ) : null}
-                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                      {getInterviewRailLabel(item.railKey)}
+                      {item.storeName ? (
+                        <span className="text-xs uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                          {item.storeName}
+                        </span>
+                      ) : null}
+                      {item.roleName ? (
+                        <span className="text-xs uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                          {item.roleName}
+                        </span>
+                      ) : null}
+                    </div>
+                    <span className="text-sm text-[var(--color-text-muted)]">
+                      {formatTimestamp(item.startedAt)}
                     </span>
-                    {item.storeName ? (
-                      <span className="text-xs uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                        {item.storeName}
-                      </span>
-                    ) : null}
-                    {item.roleName ? (
-                      <span className="text-xs uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                        {item.roleName}
-                      </span>
-                    ) : null}
                   </div>
-                  <span className="text-sm text-[var(--color-text-muted)]">
-                    {formatTimestamp(item.startedAt)}
-                  </span>
-                </div>
-                <h2 className="display-title text-xl font-semibold">
-                  {getInterviewCardTitle({
-                    railKey: item.railKey,
-                    diagnosisRecord: item.diagnosisRecord,
-                  }).replace("-", " ")}
-                </h2>
-                <p className="muted text-sm leading-6">
-                  {item.diagnosisRecord?.nextAction ||
-                    "继续完成引导式问答，收敛出结构化诊断。"}
-                </p>
-              </a>
+                  <h2 className="display-title text-xl font-semibold">
+                    {getInterviewCardTitle({
+                      railKey: item.railKey,
+                      diagnosisRecord: item.diagnosisRecord,
+                    }).replace("-", " ")}
+                  </h2>
+                  <p className="muted text-sm leading-6">
+                    继续完成引导式问答，收敛出结构化诊断。
+                  </p>
+                </a>
+              )
             ))}
           </section>
         </>

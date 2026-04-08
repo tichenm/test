@@ -6,10 +6,12 @@ const buildLoginRedirectMock = vi.fn();
 const redirectMock = vi.fn();
 const listDiagnosticRailsMock = vi.fn();
 const buildHistoryExportHrefMock = vi.fn();
+const buildHistoryFilterHrefMock = vi.fn();
 const buildHistoryFilterOptionsMock = vi.fn();
 const filterInterviewSessionsMock = vi.fn();
 const parseHistoryFiltersMock = vi.fn();
 const listInterviewSessionsForUserMock = vi.fn();
+const updateDiagnosisFollowUpForUserMock = vi.fn();
 const getDiagnosisPainTypeLabelMock = vi.fn();
 const getDiagnosisReviewStatusLabelMock = vi.fn();
 const getInterviewCardTitleMock = vi.fn();
@@ -36,6 +38,7 @@ vi.mock("@/lib/history-export", () => ({
 }));
 
 vi.mock("@/lib/history-filters", () => ({
+  buildHistoryFilterHref: (...args: unknown[]) => buildHistoryFilterHrefMock(...args),
   buildHistoryFilterOptions: (...args: unknown[]) => buildHistoryFilterOptionsMock(...args),
   filterInterviewSessions: (...args: unknown[]) => filterInterviewSessionsMock(...args),
   parseHistoryFilters: (...args: unknown[]) => parseHistoryFiltersMock(...args),
@@ -43,6 +46,8 @@ vi.mock("@/lib/history-filters", () => ({
 
 vi.mock("@/lib/interviews", () => ({
   listInterviewSessionsForUser: (...args: unknown[]) => listInterviewSessionsForUserMock(...args),
+  updateDiagnosisFollowUpForUser: (...args: unknown[]) =>
+    updateDiagnosisFollowUpForUserMock(...args),
 }));
 
 vi.mock("@/lib/interview-presenters", () => ({
@@ -66,10 +71,12 @@ describe("HistoryPage", () => {
     redirectMock.mockReset();
     listDiagnosticRailsMock.mockReset();
     buildHistoryExportHrefMock.mockReset();
+    buildHistoryFilterHrefMock.mockReset();
     buildHistoryFilterOptionsMock.mockReset();
     filterInterviewSessionsMock.mockReset();
     parseHistoryFiltersMock.mockReset();
     listInterviewSessionsForUserMock.mockReset();
+    updateDiagnosisFollowUpForUserMock.mockReset();
     getDiagnosisPainTypeLabelMock.mockReset();
     getDiagnosisReviewStatusLabelMock.mockReset();
     getInterviewCardTitleMock.mockReset();
@@ -79,6 +86,7 @@ describe("HistoryPage", () => {
       { key: "inventory-replenishment", label: "库存与补货" },
     ]);
     buildHistoryExportHrefMock.mockReturnValue("/history/export?status=completed");
+    buildHistoryFilterHrefMock.mockReturnValue("/history");
     buildHistoryFilterOptionsMock.mockReturnValue({
       storeNames: ["12号店"],
       roleNames: ["门店店长"],
@@ -157,6 +165,51 @@ describe("HistoryPage", () => {
         name: /进行中的草稿库存与补货12号店门店店长.*缺货.*继续完成引导式问答/,
       }),
     ).toHaveAttribute("href", "/interview/draft-1");
+  });
+
+  it("renders inline follow-up controls for completed diagnoses only", async () => {
+    const interviews = [
+      {
+        id: "done-1",
+        status: "COMPLETED",
+        railKey: "inventory-replenishment",
+        startedAt: new Date("2026-04-08T00:00:00Z"),
+        storeName: "12号店",
+        roleName: "门店店长",
+        diagnosisRecord: {
+          painType: "stockout",
+          severity: "high",
+          reviewStatus: "reviewing",
+          ownerName: "区域经理",
+          nextAction: "先复盘补货交接。",
+        },
+      },
+      {
+        id: "draft-1",
+        status: "ACTIVE",
+        railKey: "inventory-replenishment",
+        startedAt: new Date("2026-04-08T01:00:00Z"),
+        storeName: "18号店",
+        roleName: "门店店长",
+        diagnosisRecord: null,
+      },
+    ];
+
+    getAuthSessionMock.mockResolvedValue({ user: { id: "user-1" } });
+    listInterviewSessionsForUserMock.mockResolvedValue(interviews);
+    filterInterviewSessionsMock.mockReturnValue(interviews);
+    getDiagnosisReviewStatusLabelMock.mockImplementation((value: string) =>
+      value === "reviewing" ? "跟进中" : "待跟进",
+    );
+
+    render(await HistoryPage({ searchParams: Promise.resolve({}) }));
+
+    expect(screen.getByText("快速跟进")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("例如：区域经理、站点负责人"),
+    ).toHaveAttribute("name", "ownerName");
+    expect(screen.getByRole("button", { name: "更新跟进" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "更新跟进" })).toHaveLength(1);
   });
 
   it("surfaces a priority queue for high-severity unfinished follow-up work", async () => {
