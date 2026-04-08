@@ -24,6 +24,19 @@ type HistoryPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
+type PriorityQueueInterview = {
+  id: string;
+  railKey: string;
+  startedAt: Date;
+  storeName?: string | null;
+  roleName?: string | null;
+  diagnosisRecord?: {
+    severity?: string;
+    reviewStatus?: string;
+    nextAction?: string;
+  } | null;
+};
+
 function formatTimestamp(value: Date) {
   return new Intl.DateTimeFormat("zh-CN", {
     month: "numeric",
@@ -31,6 +44,39 @@ function formatTimestamp(value: Date) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(value);
+}
+
+function buildPriorityQueue(interviews: PriorityQueueInterview[]) {
+  const severityRank: Record<string, number> = {
+    high: 0,
+    medium: 1,
+  };
+
+  return interviews
+    .filter(
+      (item) =>
+        item.diagnosisRecord &&
+        (item.diagnosisRecord.reviewStatus === "new" ||
+          item.diagnosisRecord.reviewStatus === "reviewing"),
+    )
+    .sort((left, right) => {
+      const severityDelta =
+        (severityRank[left.diagnosisRecord?.severity ?? "medium"] ?? 99) -
+        (severityRank[right.diagnosisRecord?.severity ?? "medium"] ?? 99);
+
+      if (severityDelta !== 0) {
+        return severityDelta;
+      }
+
+      return right.startedAt.getTime() - left.startedAt.getTime();
+    })
+    .slice(0, 5);
+}
+
+function getPriorityQueueTitleRecord(item: PriorityQueueInterview) {
+  return item.diagnosisRecord && "painType" in item.diagnosisRecord
+    ? { painType: String(item.diagnosisRecord.painType ?? "") }
+    : null;
 }
 
 export default async function HistoryPage({ searchParams }: HistoryPageProps) {
@@ -46,6 +92,7 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
   const filteredInterviews = filterInterviewSessions(interviews, filters);
   const filterOptions = buildHistoryFilterOptions(interviews);
   const rails = listDiagnosticRails();
+  const priorityQueue = buildPriorityQueue(filteredInterviews);
   const hasActiveFilters = Boolean(
     filters.status !== "all" ||
       filters.railKey !== "all" ||
@@ -261,54 +308,118 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
           </div>
         </section>
       ) : (
-        <section className="grid gap-3">
-          {filteredInterviews.map((item) => (
-            <a
-              key={item.id}
-              href={item.status === "COMPLETED" ? `/history/${item.id}` : `/interview/${item.id}`}
-              className="app-card flex flex-col gap-3 p-5"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
-                    {item.status === "COMPLETED" ? "已完成" : "进行中的草稿"}
-                  </span>
-                  {item.status === "COMPLETED" && item.diagnosisRecord ? (
-                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                      {getDiagnosisReviewStatusLabel(item.diagnosisRecord.reviewStatus)}
-                    </span>
-                  ) : null}
-                  <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                    {getInterviewRailLabel(item.railKey)}
-                  </span>
-                  {item.storeName ? (
-                    <span className="text-xs uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                      {item.storeName}
-                    </span>
-                  ) : null}
-                  {item.roleName ? (
-                    <span className="text-xs uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                      {item.roleName}
-                    </span>
-                  ) : null}
-                </div>
-                <span className="text-sm text-[var(--color-text-muted)]">
-                  {formatTimestamp(item.startedAt)}
-                </span>
+        <>
+          {priorityQueue.length > 0 ? (
+            <section className="app-card flex flex-col gap-4 p-6">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                  优先处理队列
+                </p>
+                <h2 className="display-title text-2xl font-semibold">
+                  先处理高严重度且仍未闭环的问题。
+                </h2>
+                <p className="muted text-sm leading-6">
+                  这份队列只基于你当前筛选出来的历史视图，方便管理者直接进入最该推进的几条诊断。
+                </p>
               </div>
-              <h2 className="display-title text-xl font-semibold">
-                {getInterviewCardTitle({
-                  railKey: item.railKey,
-                  diagnosisRecord: item.diagnosisRecord,
-                }).replace("-", " ")}
-              </h2>
-              <p className="muted text-sm leading-6">
-                {item.diagnosisRecord?.nextAction ||
-                  "继续完成引导式问答，收敛出结构化诊断。"}
-              </p>
-            </a>
-          ))}
-        </section>
+
+              <div className="grid gap-3">
+                {priorityQueue.map((item) => (
+                  <a
+                    key={item.id}
+                    href={`/history/${item.id}`}
+                    aria-label={`优先处理 ${getInterviewCardTitle({
+                      railKey: item.railKey,
+                      diagnosisRecord: getPriorityQueueTitleRecord(item),
+                    })} ${item.storeName ?? ""} ${item.roleName ?? ""}`}
+                    className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
+                          {getInterviewRailLabel(item.railKey)}
+                        </span>
+                        <div className="flex flex-wrap gap-2 text-xs text-[var(--color-text-muted)]">
+                          <span>
+                            严重程度：
+                            {item.diagnosisRecord?.severity === "high" ? "高" : "中"}
+                          </span>
+                          <span>
+                            跟进状态：
+                            {getDiagnosisReviewStatusLabel(item.diagnosisRecord?.reviewStatus ?? "new")}
+                          </span>
+                          {item.storeName ? <span>{item.storeName}</span> : null}
+                          {item.roleName ? <span>{item.roleName}</span> : null}
+                        </div>
+                      </div>
+                      <span className="text-sm text-[var(--color-text-muted)]">
+                        {formatTimestamp(item.startedAt)}
+                      </span>
+                    </div>
+                    <h3 className="mt-3 text-base font-semibold">
+                      {getInterviewCardTitle({
+                        railKey: item.railKey,
+                        diagnosisRecord: getPriorityQueueTitleRecord(item),
+                      }).replace("-", " ")}
+                    </h3>
+                    <p className="muted mt-2 text-sm leading-6">
+                      {item.diagnosisRecord?.nextAction}
+                    </p>
+                  </a>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <section className="grid gap-3">
+            {filteredInterviews.map((item) => (
+              <a
+                key={item.id}
+                href={item.status === "COMPLETED" ? `/history/${item.id}` : `/interview/${item.id}`}
+                className="app-card flex flex-col gap-3 p-5"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
+                      {item.status === "COMPLETED" ? "已完成" : "进行中的草稿"}
+                    </span>
+                    {item.status === "COMPLETED" && item.diagnosisRecord ? (
+                      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                        {getDiagnosisReviewStatusLabel(item.diagnosisRecord.reviewStatus)}
+                      </span>
+                    ) : null}
+                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                      {getInterviewRailLabel(item.railKey)}
+                    </span>
+                    {item.storeName ? (
+                      <span className="text-xs uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                        {item.storeName}
+                      </span>
+                    ) : null}
+                    {item.roleName ? (
+                      <span className="text-xs uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                        {item.roleName}
+                      </span>
+                    ) : null}
+                  </div>
+                  <span className="text-sm text-[var(--color-text-muted)]">
+                    {formatTimestamp(item.startedAt)}
+                  </span>
+                </div>
+                <h2 className="display-title text-xl font-semibold">
+                  {getInterviewCardTitle({
+                    railKey: item.railKey,
+                    diagnosisRecord: item.diagnosisRecord,
+                  }).replace("-", " ")}
+                </h2>
+                <p className="muted text-sm leading-6">
+                  {item.diagnosisRecord?.nextAction ||
+                    "继续完成引导式问答，收敛出结构化诊断。"}
+                </p>
+              </a>
+            ))}
+          </section>
+        </>
       )}
     </main>
   );

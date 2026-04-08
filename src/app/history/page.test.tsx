@@ -158,4 +158,92 @@ describe("HistoryPage", () => {
       }),
     ).toHaveAttribute("href", "/interview/draft-1");
   });
+
+  it("surfaces a priority queue for high-severity unfinished follow-up work", async () => {
+    const interviews = [
+      {
+        id: "done-high-new",
+        status: "COMPLETED",
+        railKey: "inventory-replenishment",
+        startedAt: new Date("2026-04-08T09:00:00Z"),
+        storeName: "12号店",
+        roleName: "门店店长",
+        diagnosisRecord: {
+          severity: "high",
+          reviewStatus: "new",
+          nextAction: "先补缺货商品的责任交接。",
+        },
+      },
+      {
+        id: "done-high-reviewing",
+        status: "COMPLETED",
+        railKey: "inventory-replenishment",
+        startedAt: new Date("2026-04-08T11:00:00Z"),
+        storeName: "18号店",
+        roleName: "门店店长",
+        diagnosisRecord: {
+          severity: "high",
+          reviewStatus: "reviewing",
+          nextAction: "先核对最新高峰补货节奏。",
+        },
+      },
+      {
+        id: "done-medium-reviewing",
+        status: "COMPLETED",
+        railKey: "inventory-replenishment",
+        startedAt: new Date("2026-04-08T12:00:00Z"),
+        storeName: "22号店",
+        roleName: "值班店长",
+        diagnosisRecord: {
+          severity: "medium",
+          reviewStatus: "reviewing",
+          nextAction: "先复盘本周盘点误差。",
+        },
+      },
+      {
+        id: "done-resolved",
+        status: "COMPLETED",
+        railKey: "inventory-replenishment",
+        startedAt: new Date("2026-04-08T13:00:00Z"),
+        storeName: "30号店",
+        roleName: "门店店长",
+        diagnosisRecord: {
+          severity: "high",
+          reviewStatus: "resolved",
+          nextAction: "这条不该再出现在优先队列。",
+        },
+      },
+      {
+        id: "draft-1",
+        status: "ACTIVE",
+        railKey: "inventory-replenishment",
+        startedAt: new Date("2026-04-08T14:00:00Z"),
+        storeName: "40号店",
+        roleName: "门店店长",
+        diagnosisRecord: null,
+      },
+    ];
+
+    getAuthSessionMock.mockResolvedValue({ user: { id: "user-1" } });
+    listInterviewSessionsForUserMock.mockResolvedValue(interviews);
+    filterInterviewSessionsMock.mockReturnValue(interviews);
+    getDiagnosisReviewStatusLabelMock.mockImplementation((value: string) =>
+      value === "new" ? "待跟进" : value === "reviewing" ? "跟进中" : "已解决",
+    );
+
+    render(await HistoryPage({ searchParams: Promise.resolve({}) }));
+
+    expect(screen.getByText("优先处理队列")).toBeInTheDocument();
+    expect(screen.getByText("先处理高严重度且仍未闭环的问题。")).toBeInTheDocument();
+
+    const priorityLinks = screen.getAllByRole("link", { name: /优先处理/ });
+
+    expect(priorityLinks).toHaveLength(3);
+    expect(priorityLinks[0]).toHaveAttribute("href", "/history/done-high-reviewing");
+    expect(priorityLinks[1]).toHaveAttribute("href", "/history/done-high-new");
+    expect(priorityLinks[2]).toHaveAttribute("href", "/history/done-medium-reviewing");
+    expect(
+      priorityLinks.some((link) => link.getAttribute("href") === "/history/done-resolved"),
+    ).toBe(false);
+  });
 });

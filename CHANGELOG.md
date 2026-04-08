@@ -9,6 +9,7 @@ matters, and whether they need to do anything.
 
 ### Added
 
+- Priority queue on the history workspace for high-severity diagnoses that are still waiting on follow-up
 - Dedicated `store-promo-execution` rail for store campaign launch, display execution, and signage consistency diagnosis
 - Dedicated `store-training-onboarding` rail for store onboarding ramp, SOP consistency, and trainer coverage diagnosis
 - Dedicated `warehouse-picking-dispatch` rail for warehouse picking wave delays, recheck loops, and dock handoff bottlenecks
