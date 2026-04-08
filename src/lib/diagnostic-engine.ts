@@ -115,7 +115,9 @@ export type {
 export type { PainType } from "@/lib/pain-types";
 export {
   DEFAULT_RAIL_KEY,
+  DEFAULT_WORKBENCH_RAIL_KEY,
   getDiagnosticRail,
   isRailKey,
   listDiagnosticRails,
+  listWorkbenchDiagnosticRails,
 } from "@/lib/diagnostic-rails";

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const getAuthSessionMock = vi.fn();
 const buildLoginRedirectMock = vi.fn();
 const redirectMock = vi.fn();
-const listDiagnosticRailsMock = vi.fn();
+const listWorkbenchDiagnosticRailsMock = vi.fn();
 const getDiagnosticRailMock = vi.fn();
 const listInterviewSessionsForUserMock = vi.fn();
 const getInterviewCardTitleMock = vi.fn();
@@ -27,10 +27,11 @@ vi.mock("@/components/rail-picker", () => ({
 }));
 
 vi.mock("@/lib/diagnostic-engine", () => ({
-  DEFAULT_RAIL_KEY: "inventory-replenishment",
+  DEFAULT_WORKBENCH_RAIL_KEY: "store-stock-replenishment",
   getDiagnosticRail: (...args: unknown[]) => getDiagnosticRailMock(...args),
   isRailKey: () => true,
-  listDiagnosticRails: (...args: unknown[]) => listDiagnosticRailsMock(...args),
+  listWorkbenchDiagnosticRails: (...args: unknown[]) =>
+    listWorkbenchDiagnosticRailsMock(...args),
 }));
 
 vi.mock("@/lib/interviews", () => ({
@@ -51,14 +52,14 @@ describe("HomePage", () => {
     getAuthSessionMock.mockReset();
     buildLoginRedirectMock.mockReset();
     redirectMock.mockReset();
-    listDiagnosticRailsMock.mockReset();
+    listWorkbenchDiagnosticRailsMock.mockReset();
     getDiagnosticRailMock.mockReset();
     listInterviewSessionsForUserMock.mockReset();
     getInterviewCardTitleMock.mockReset();
     getInterviewRailLabelMock.mockReset();
 
-    listDiagnosticRailsMock.mockReturnValue([
-      { key: "inventory-replenishment", label: "库存与补货" },
+    listWorkbenchDiagnosticRailsMock.mockReturnValue([
+      { key: "store-stock-replenishment", label: "门店库存与补货" },
     ]);
     getDiagnosticRailMock.mockReturnValue({
       workbenchSummary: "默认诊断摘要",

@@ -1494,6 +1494,7 @@ const warehouseReceivingRail: DiagnosticRail = {
 };
 
 export const DEFAULT_RAIL_KEY: RailKey = "inventory-replenishment";
+export const DEFAULT_WORKBENCH_RAIL_KEY: RailKey = "store-stock-replenishment";
 
 const diagnosticRails: Record<RailKey, DiagnosticRail> = {
   "inventory-replenishment": inventoryReplenishmentRail,
@@ -1510,12 +1511,30 @@ const diagnosticRails: Record<RailKey, DiagnosticRail> = {
   "warehouse-receiving": warehouseReceivingRail,
 };
 
+const workbenchRailKeys: RailKey[] = [
+  "store-stock-replenishment",
+  "store-inventory-control",
+  "store-staffing-scheduling",
+  "store-equipment-maintenance",
+  "store-shrinkage-waste",
+  "store-promo-execution",
+  "store-training-onboarding",
+  "store-service-complaints",
+  "project-rollout-handoff",
+  "warehouse-picking-dispatch",
+  "warehouse-receiving",
+];
+
 export function getDiagnosticRail(railKey: RailKey): DiagnosticRail {
   return diagnosticRails[railKey];
 }
 
 export function listDiagnosticRails(): DiagnosticRail[] {
   return Object.values(diagnosticRails);
+}
+
+export function listWorkbenchDiagnosticRails(): DiagnosticRail[] {
+  return workbenchRailKeys.map((railKey) => diagnosticRails[railKey]);
 }
 
 export function isRailKey(value: string): value is RailKey {

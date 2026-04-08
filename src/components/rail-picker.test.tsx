@@ -1,19 +1,18 @@
 import { render, screen } from "@testing-library/react";
 
 import { RailPicker } from "@/components/rail-picker";
-import { listDiagnosticRails } from "@/lib/diagnostic-engine";
+import { listWorkbenchDiagnosticRails } from "@/lib/diagnostic-engine";
 
 describe("RailPicker", () => {
-  it("renders all available rails with distinct submit values", () => {
+  it("renders workbench rails with distinct submit values and hides the legacy inventory card", () => {
     render(
       <RailPicker
-        rails={listDiagnosticRails()}
-        defaultRailKey="inventory-replenishment"
+        rails={listWorkbenchDiagnosticRails()}
+        defaultRailKey="store-stock-replenishment"
         action="#"
       />,
     );
 
-    expect(screen.getByText("库存与补货")).toBeInTheDocument();
     expect(screen.getByText("门店库存与补货")).toBeInTheDocument();
     expect(screen.getByText("门店库存管控")).toBeInTheDocument();
     expect(screen.getByText("门店排班与人手配置")).toBeInTheDocument();
@@ -28,9 +27,6 @@ describe("RailPicker", () => {
     expect(screen.getByLabelText("门店或站点")).toBeInTheDocument();
     expect(screen.getByLabelText("角色或职能")).toBeInTheDocument();
 
-    const inventoryButton = screen.getByRole("button", {
-      name: "开始库存与补货诊断",
-    });
     const warehouseButton = screen.getByRole("button", {
       name: "开始仓库收货诊断",
     });
@@ -65,8 +61,11 @@ describe("RailPicker", () => {
       name: "开始仓库拣货与出库协同诊断",
     });
 
-    expect(inventoryButton).toHaveAttribute("name", "railKey");
-    expect(inventoryButton).toHaveAttribute("value", "inventory-replenishment");
+    expect(
+      screen.queryByRole("button", {
+        name: "开始库存与补货诊断",
+      }),
+    ).not.toBeInTheDocument();
     expect(storeButton).toHaveAttribute("name", "railKey");
     expect(storeButton).toHaveAttribute("value", "store-stock-replenishment");
     expect(controlButton).toHaveAttribute("name", "railKey");
@@ -94,8 +93,8 @@ describe("RailPicker", () => {
   it("marks the default rail as recommended", () => {
     render(
       <RailPicker
-        rails={listDiagnosticRails()}
-        defaultRailKey="inventory-replenishment"
+        rails={listWorkbenchDiagnosticRails()}
+        defaultRailKey="store-stock-replenishment"
         action="#"
       />,
     );

@@ -5,10 +5,10 @@ import { RailPicker } from "@/components/rail-picker";
 import { getAuthSession } from "@/lib/auth";
 import { buildLoginRedirect } from "@/lib/auth-navigation";
 import {
-  DEFAULT_RAIL_KEY,
+  DEFAULT_WORKBENCH_RAIL_KEY,
   getDiagnosticRail,
   isRailKey,
-  listDiagnosticRails,
+  listWorkbenchDiagnosticRails,
 } from "@/lib/diagnostic-engine";
 import {
   createInterviewSessionForUser,
@@ -31,8 +31,8 @@ function formatTimestamp(value: Date) {
 
 export default async function HomePage() {
   const session = await getAuthSession();
-  const defaultRail = getDiagnosticRail(DEFAULT_RAIL_KEY);
-  const rails = listDiagnosticRails();
+  const defaultRail = getDiagnosticRail(DEFAULT_WORKBENCH_RAIL_KEY);
+  const rails = listWorkbenchDiagnosticRails();
 
   if (!session?.user?.id) {
     redirect(buildLoginRedirect("/"));
@@ -51,10 +51,12 @@ export default async function HomePage() {
       redirect(buildLoginRedirect("/"));
     }
 
-    const selectedRailKey = String(formData.get("railKey") || DEFAULT_RAIL_KEY);
+    const selectedRailKey = String(
+      formData.get("railKey") || DEFAULT_WORKBENCH_RAIL_KEY,
+    );
     const railKey = isRailKey(selectedRailKey)
       ? selectedRailKey
-      : DEFAULT_RAIL_KEY;
+      : DEFAULT_WORKBENCH_RAIL_KEY;
     const storeName = String(formData.get("storeName") || "");
     const roleName = String(formData.get("roleName") || "");
 
@@ -84,7 +86,7 @@ export default async function HomePage() {
 
         <RailPicker
           rails={rails}
-          defaultRailKey={DEFAULT_RAIL_KEY}
+          defaultRailKey={DEFAULT_WORKBENCH_RAIL_KEY}
           action={startDiagnosisAction}
         />
       </section>
