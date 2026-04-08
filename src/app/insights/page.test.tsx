@@ -94,6 +94,7 @@ describe("InsightsPage", () => {
       storeBreakdown: [],
       reviewStatusBreakdown: [],
       severityBreakdown: [],
+      actionableQueue: [],
       recentCompleted: [],
     });
 
@@ -127,6 +128,20 @@ describe("InsightsPage", () => {
       storeBreakdown: [{ key: "Store 12", label: "Store 12", count: 2 }],
       reviewStatusBreakdown: [{ key: "reviewing", label: "跟进中", count: 2 }],
       severityBreakdown: [{ key: "high", label: "高", count: 3 }],
+      actionableQueue: [
+        {
+          id: "session-priority-1",
+          railKey: "store-stock-replenishment",
+          storeName: "Store 18",
+          roleName: "Store manager",
+          startedAt: new Date("2026-04-07T09:00:00Z"),
+          diagnosisRecord: {
+            severity: "high",
+            reviewStatus: "new",
+            nextAction: "Check shelf gaps before the next peak window.",
+          },
+        },
+      ],
       recentCompleted: [
         {
           id: "session-1",
@@ -146,11 +161,18 @@ describe("InsightsPage", () => {
 
     expect(screen.getByText("按流程查看问题")).toBeInTheDocument();
     expect(screen.getByText("按角色查看问题")).toBeInTheDocument();
+    expect(screen.getByText("本周最该处理的 5 条问题")).toBeInTheDocument();
+    expect(screen.getByText("Check shelf gaps before the next peak window.")).toBeInTheDocument();
     expect(screen.getByText("高频下一步动作")).toBeInTheDocument();
     expect(screen.getByText("最新结构化诊断")).toBeInTheDocument();
     expect(screen.getByText("Tighten replenishment handoff before Friday close.")).toBeInTheDocument();
     expect(screen.getByText("Review replenishment ownership before the next shift.")).toBeInTheDocument();
-    expect(screen.getByText("共同导致的问题")).toBeInTheDocument();
+    expect(screen.getAllByText("共同导致的问题")).toHaveLength(2);
+    expect(
+      screen.getByRole("link", {
+        name: /门店库存与补货Store 18Store managernew共同导致的问题.*Check shelf gaps before the next peak window\./,
+      }),
+    ).toHaveAttribute("href", "/history/session-priority-1");
     expect(
       screen.getByRole("link", {
         name: /门店库存与补货Store 12Store managerreviewing共同导致的问题.*Review replenishment ownership before the next shift\./,

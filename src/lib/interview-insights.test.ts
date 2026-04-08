@@ -102,6 +102,10 @@ describe("buildInterviewInsights", () => {
       { label: "Review receiving handoff", count: 2 },
       { label: "Review replenishment timing", count: 1 },
     ]);
+    expect(insights.actionableQueue.map((item) => item.id)).toEqual([
+      "completed-1",
+      "completed-2",
+    ]);
     expect(insights.recentCompleted.map((item) => item.id)).toEqual([
       "completed-3",
       "completed-2",
@@ -136,6 +140,7 @@ describe("buildInterviewInsights", () => {
     expect(insights.roleBreakdown).toEqual([]);
     expect(insights.reviewStatusBreakdown).toEqual([]);
     expect(insights.topActions).toEqual([]);
+    expect(insights.actionableQueue).toEqual([]);
     expect(insights.recentCompleted).toEqual([]);
   });
 });

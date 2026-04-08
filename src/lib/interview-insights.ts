@@ -45,6 +45,7 @@ type InterviewInsights = {
     label: string;
     count: number;
   }>;
+  actionableQueue: Array<InsightSession & { diagnosisRecord: InsightDiagnosisRecord }>;
   recentCompleted: Array<InsightSession & { diagnosisRecord: InsightDiagnosisRecord }>;
 };
 
@@ -103,6 +104,20 @@ export function buildInterviewInsights(sessions: InsightSession[]): InterviewIns
     getDiagnosisPainTypeLabel,
   );
   const topPainType = painTypeBreakdown[0];
+  const actionableQueue = completed
+    .filter(
+      (session) =>
+        session.diagnosisRecord.reviewStatus === "new" ||
+        session.diagnosisRecord.reviewStatus === "reviewing",
+    )
+    .sort((left, right) => {
+      if (left.diagnosisRecord.severity !== right.diagnosisRecord.severity) {
+        return left.diagnosisRecord.severity === "high" ? -1 : 1;
+      }
+
+      return right.startedAt.getTime() - left.startedAt.getTime();
+    })
+    .slice(0, 5);
 
   return {
     summary: {
@@ -127,6 +142,7 @@ export function buildInterviewInsights(sessions: InsightSession[]): InterviewIns
 
         return left.label.localeCompare(right.label);
       }),
+    actionableQueue,
     recentCompleted: completed.slice(0, 5),
   };
 }

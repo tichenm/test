@@ -100,6 +100,67 @@ export default async function InsightsPage() {
         </section>
       ) : (
         <>
+          <section className="app-card flex flex-col gap-4 p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                  动作入口
+                </p>
+                <h2 className="display-title mt-1 text-2xl font-semibold">
+                  本周最该处理的 5 条问题
+                </h2>
+              </div>
+              <Link href="/history" className="text-sm font-medium text-[var(--color-accent)]">
+                打开历史
+              </Link>
+            </div>
+            <p className="muted text-sm leading-6">
+              先处理仍未闭环的诊断，按严重程度优先，再看最新发生的问题。
+            </p>
+
+            <ul className="grid gap-3">
+              {insights.actionableQueue.map((item) => (
+                <li key={item.id}>
+                  <a
+                    href={`/history/${item.id}`}
+                    className="flex flex-col gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] p-4"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
+                          {getInterviewRailLabel(item.railKey)}
+                        </span>
+                        {item.storeName ? (
+                          <span className="text-xs uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                            {item.storeName}
+                          </span>
+                        ) : null}
+                        {item.roleName ? (
+                          <span className="text-xs uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                            {item.roleName}
+                          </span>
+                        ) : null}
+                        <span className="text-xs uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                          {getDiagnosisReviewStatusLabel(item.diagnosisRecord.reviewStatus)}
+                        </span>
+                        <span className="font-semibold capitalize">
+                          {getInterviewCardTitle({
+                            railKey: item.railKey,
+                            diagnosisRecord: item.diagnosisRecord,
+                          }).replace("-", " ")}
+                        </span>
+                      </div>
+                      <span className="text-sm text-[var(--color-text-muted)]">
+                        {formatTimestamp(item.startedAt)}
+                      </span>
+                    </div>
+                    <p className="muted text-sm">{item.diagnosisRecord.nextAction}</p>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+
           <section className="grid gap-4 lg:grid-cols-2">
             <BreakdownCard
               title="按流程查看问题"
