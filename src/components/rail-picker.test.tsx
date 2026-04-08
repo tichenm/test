@@ -4,7 +4,7 @@ import { RailPicker } from "@/components/rail-picker";
 import { listWorkbenchDiagnosticRails } from "@/lib/diagnostic-engine";
 
 describe("RailPicker", () => {
-  it("renders workbench rails with distinct submit values and hides the legacy inventory card", () => {
+  it("renders workbench rails with distinct submit values and hides overlapping inventory cards", () => {
     render(
       <RailPicker
         rails={listWorkbenchDiagnosticRails()}
@@ -14,7 +14,6 @@ describe("RailPicker", () => {
     );
 
     expect(screen.getByText("门店库存与补货")).toBeInTheDocument();
-    expect(screen.getByText("门店库存管控")).toBeInTheDocument();
     expect(screen.getByText("门店排班与人手配置")).toBeInTheDocument();
     expect(screen.getByText("门店设备故障与维修响应")).toBeInTheDocument();
     expect(screen.getByText("门店损耗与报废")).toBeInTheDocument();
@@ -32,9 +31,6 @@ describe("RailPicker", () => {
     });
     const storeButton = screen.getByRole("button", {
       name: "开始门店库存与补货诊断",
-    });
-    const controlButton = screen.getByRole("button", {
-      name: "开始门店库存管控诊断",
     });
     const staffingButton = screen.getByRole("button", {
       name: "开始门店排班与人手配置诊断",
@@ -66,10 +62,13 @@ describe("RailPicker", () => {
         name: "开始库存与补货诊断",
       }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: "开始门店库存管控诊断",
+      }),
+    ).not.toBeInTheDocument();
     expect(storeButton).toHaveAttribute("name", "railKey");
     expect(storeButton).toHaveAttribute("value", "store-stock-replenishment");
-    expect(controlButton).toHaveAttribute("name", "railKey");
-    expect(controlButton).toHaveAttribute("value", "store-inventory-control");
     expect(staffingButton).toHaveAttribute("name", "railKey");
     expect(staffingButton).toHaveAttribute("value", "store-staffing-scheduling");
     expect(equipmentButton).toHaveAttribute("name", "railKey");

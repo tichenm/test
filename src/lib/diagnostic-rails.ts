@@ -1513,7 +1513,6 @@ const diagnosticRails: Record<RailKey, DiagnosticRail> = {
 
 const workbenchRailKeys: RailKey[] = [
   "store-stock-replenishment",
-  "store-inventory-control",
   "store-staffing-scheduling",
   "store-equipment-maintenance",
   "store-shrinkage-waste",
