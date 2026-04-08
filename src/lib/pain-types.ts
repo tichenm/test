@@ -17,6 +17,9 @@ export const DIAGNOSIS_PAIN_TYPES = [
   "onboarding-ramp-delay",
   "sop-mismatch",
   "trainer-coverage-gap",
+  "picking-wave-delay",
+  "mispick-recheck-loop",
+  "dock-handoff-bottleneck",
   "service-delay",
   "service-inconsistency",
   "handoff-delay",
@@ -98,6 +101,18 @@ const PAIN_TYPE_ALIASES: Record<string, PainType> = {
   "带教没人盯": "trainer-coverage-gap",
   "带教覆盖断档": "trainer-coverage-gap",
   "带教跟进断档": "trainer-coverage-gap",
+  "picking-wave-delay": "picking-wave-delay",
+  "波次延迟": "picking-wave-delay",
+  "波次启动延迟": "picking-wave-delay",
+  "拣货启动晚点": "picking-wave-delay",
+  "mispick-recheck-loop": "mispick-recheck-loop",
+  "拣配反复复核": "mispick-recheck-loop",
+  "拣配反复返工": "mispick-recheck-loop",
+  "反复复核": "mispick-recheck-loop",
+  "dock-handoff-bottleneck": "dock-handoff-bottleneck",
+  "月台交接堵塞": "dock-handoff-bottleneck",
+  "月台堵塞": "dock-handoff-bottleneck",
+  "月台交接卡住": "dock-handoff-bottleneck",
   "service-delay": "service-delay",
   "等待太久": "service-delay",
   "等待过长": "service-delay",
@@ -159,6 +174,12 @@ export function getDiagnosisPainTypeLabel(painType: string) {
       return "标准动作不一致";
     case "trainer-coverage-gap":
       return "带教没人盯";
+    case "picking-wave-delay":
+      return "波次延迟";
+    case "mispick-recheck-loop":
+      return "拣配反复复核";
+    case "dock-handoff-bottleneck":
+      return "月台交接堵塞";
     case "service-delay":
       return "等待过长";
     case "service-inconsistency":

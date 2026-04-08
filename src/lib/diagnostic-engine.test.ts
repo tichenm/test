@@ -554,6 +554,19 @@ describe("diagnostic engine", () => {
     );
   });
 
+  it("uses warehouse picking wording for dispatch coordination interviews", () => {
+    const initial = createInterviewState("warehouse-picking-dispatch" as never);
+
+    const afterSymptom = advanceInterview(initial, {
+      painType: "picking-wave-delay" as never,
+    }).state;
+
+    expect(afterSymptom.currentStep).toBe("frequency-pattern");
+    expect(getCurrentStepDefinition(afterSymptom).prompt(afterSymptom)).toContain(
+      "波次下发或拣货启动明显晚点",
+    );
+  });
+
   it("builds project-specific diagnosis copy for rollout handoff interviews", () => {
     let state = createInterviewState("project-rollout-handoff" as never);
 
@@ -580,6 +593,35 @@ describe("diagnostic engine", () => {
       severity: "high",
       likelyRootCause: expect.stringContaining("项目交接会卡住"),
       nextAction: expect.stringContaining("明确交接负责人"),
+    });
+  });
+
+  it("builds warehouse picking diagnosis copy for dock handoff bottlenecks", () => {
+    let state = createInterviewState("warehouse-picking-dispatch" as never);
+
+    state = advanceInterview(state, { painType: "dock-handoff-bottleneck" as never }).state;
+    state = advanceInterview(state, { frequency: "每周高峰出库波次都会卡一两次" }).state;
+    state = advanceInterview(state, { timeWindow: "晚班截单前和早班首波次前" }).state;
+    state = advanceInterview(state, {
+      affectedScope: "A区拣货线、集货区和3号月台",
+    }).state;
+    state = advanceInterview(state, {
+      peopleInvolved: "波次调度、拣货员、复核员和月台装车员",
+    }).state;
+    state = advanceInterview(state, {
+      currentWorkaround: "班组长临时拆线补位并手工协调装车顺序",
+    }).state;
+    const completion = advanceInterview(state, {
+      operationalImpact: "出库节点反复拥堵，司机等待和加班都在上升",
+    });
+
+    const record = buildDiagnosisRecord(completion.state);
+
+    expect(record).toMatchObject({
+      painType: "dock-handoff-bottleneck",
+      severity: "medium",
+      likelyRootCause: expect.stringContaining("月台交接"),
+      nextAction: expect.stringContaining("月台负责人"),
     });
   });
 });

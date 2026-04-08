@@ -12,6 +12,7 @@ export type RailKey =
   | "store-training-onboarding"
   | "store-service-complaints"
   | "project-rollout-handoff"
+  | "warehouse-picking-dispatch"
   | "warehouse-receiving";
 export type Severity = "medium" | "high";
 
@@ -140,6 +141,12 @@ const projectSymptomChoices = [
   { label: "交接延迟", value: "handoff-delay" },
   { label: "执行偏差", value: "execution-drift" },
   { label: "依赖盲区", value: "dependency-blindspot" },
+] as const;
+
+const warehousePickingSymptomChoices = [
+  { label: "波次延迟", value: "picking-wave-delay" },
+  { label: "拣配反复复核", value: "mispick-recheck-loop" },
+  { label: "月台交接堵塞", value: "dock-handoff-bottleneck" },
 ] as const;
 
 function normalizeDiagnosticText(...values: Array<string | undefined>) {
@@ -1303,6 +1310,120 @@ const projectRolloutHandoffRail: DiagnosticRail = {
   },
 };
 
+const warehousePickingDispatchRail: DiagnosticRail = {
+  key: "warehouse-picking-dispatch",
+  label: "仓库拣货与出库协同",
+  workbenchSummary:
+    "把仓库波次延迟、拣配反复复核和月台堵塞收敛成清晰诊断，并给仓库主管一个可先落地的出库协同动作。",
+  interviewContextLabel: "仓库拣货与出库协同",
+  stepOrder: sharedStepOrder,
+  steps: {
+    "problem-symptom": {
+      key: "problem-symptom",
+      field: "painType",
+      suggestedAnswers: warehousePickingSymptomChoices,
+      prompt: () =>
+        "拣货出库最常卡在哪一类，波次延迟、拣配反复复核，还是月台交接堵塞？",
+    },
+    "frequency-pattern": {
+      key: "frequency-pattern",
+      field: "frequency",
+      prompt: (state) => {
+        switch (state.fields.painType) {
+          case "picking-wave-delay":
+            return "波次下发或拣货启动明显晚点、影响整体出库节奏的情况，通常多久出现一次？";
+          case "mispick-recheck-loop":
+            return "拣配后反复复核、改单重拣的情况，通常多久出现一次？";
+          case "dock-handoff-bottleneck":
+            return "货到月台后交接不动、装车排队积压的情况，通常多久出现一次？";
+          default:
+            return "这个仓库拣货出库问题通常多久出现一次？";
+        }
+      },
+    },
+    "time-window": {
+      key: "time-window",
+      field: "timeWindow",
+      prompt: () =>
+        "这个问题最常在什么时候出现，首波次启动、截单前、晚班交接，还是司机集中到场时？",
+    },
+    "affected-scope": {
+      key: "affected-scope",
+      field: "affectedScope",
+      prompt: () =>
+        "最常受影响的是哪些波次、库区、集货区、月台，或必须准点出库的订单类型？",
+    },
+    "people-involved": {
+      key: "people-involved",
+      field: "peopleInvolved",
+      prompt: () =>
+        "这个问题出现时，通常会牵涉哪些人，波次调度、拣货员、复核员、月台装车员，还是运输协调人？",
+    },
+    "current-workaround": {
+      key: "current-workaround",
+      field: "currentWorkaround",
+      prompt: () =>
+        "团队现在通常怎么临时补位，是插单改波次、临时拆线补人，还是手工改装车顺序？",
+    },
+    "operational-impact": {
+      key: "operational-impact",
+      field: "operationalImpact",
+      prompt: () =>
+        "这个问题会给出库准时率、司机等待、加班负荷，或客户到货承诺带来什么影响？",
+    },
+  },
+  buildDiagnosis: (fields) => {
+    if (fields.painType === "picking-wave-delay") {
+      return {
+        painType: fields.painType,
+        severity: "high",
+        frequency: fields.frequency,
+        timeWindow: fields.timeWindow,
+        affectedScope: fields.affectedScope,
+        peopleInvolved: fields.peopleInvolved,
+        currentWorkaround: fields.currentWorkaround,
+        operationalImpact: fields.operationalImpact,
+        likelyRootCause:
+          "波次下发节奏和现场拣货准备没有稳定对齐，导致一开波次就滞后，后续出库节点被动排队。",
+        nextAction:
+          "先选一个最常延迟的波次，复盘下发时点、拣货就绪信号和异常升级路径，把首个卡点固定下来。",
+      };
+    }
+
+    if (fields.painType === "mispick-recheck-loop") {
+      return {
+        painType: fields.painType,
+        severity: "medium",
+        frequency: fields.frequency,
+        timeWindow: fields.timeWindow,
+        affectedScope: fields.affectedScope,
+        peopleInvolved: fields.peopleInvolved,
+        currentWorkaround: fields.currentWorkaround,
+        operationalImpact: fields.operationalImpact,
+        likelyRootCause:
+          "拣货标准和复核口径没有被压实，导致同一批订单在拣配与复核之间反复往返，吞噬了有效产能。",
+        nextAction:
+          "挑一个返工最高的订单类型，统一拣货动作和复核规则，并在下一班次结束前抽样复盘。",
+      };
+    }
+
+    return {
+      painType: fields.painType,
+      severity: "medium",
+      frequency: fields.frequency,
+      timeWindow: fields.timeWindow,
+      affectedScope: fields.affectedScope,
+      peopleInvolved: fields.peopleInvolved,
+      currentWorkaround: fields.currentWorkaround,
+      operationalImpact: fields.operationalImpact,
+      likelyRootCause:
+        "月台交接责任没有形成固定节拍，导致集货完成后无法顺畅交给装车环节，月台交接成为持续堵点。",
+      nextAction:
+        "先为高峰出库时段指定月台负责人，固定交接检查点和放行顺序，避免货到月台后继续排队。",
+    };
+  },
+};
+
 const warehouseReceivingRail: DiagnosticRail = {
   key: "warehouse-receiving",
   label: "仓库收货",
@@ -1385,6 +1506,7 @@ const diagnosticRails: Record<RailKey, DiagnosticRail> = {
   "store-training-onboarding": storeTrainingOnboardingRail,
   "store-service-complaints": storeServiceComplaintsRail,
   "project-rollout-handoff": projectRolloutHandoffRail,
+  "warehouse-picking-dispatch": warehousePickingDispatchRail,
   "warehouse-receiving": warehouseReceivingRail,
 };
 

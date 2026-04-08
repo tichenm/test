@@ -60,6 +60,9 @@ describe("interview presenters", () => {
     expect(getInterviewRailLabel("project-rollout-handoff")).toBe(
       "项目落地与交接",
     );
+    expect(getInterviewRailLabel("warehouse-picking-dispatch")).toBe(
+      "仓库拣货与出库协同",
+    );
     expect(getInterviewRailLabel("warehouse-receiving")).toBe("仓库收货");
   });
 
@@ -108,5 +111,8 @@ describe("interview presenters", () => {
     expect(getDiagnosisPainTypeLabel("onboarding-ramp-delay")).toBe("上手太慢");
     expect(getDiagnosisPainTypeLabel("sop-mismatch")).toBe("标准动作不一致");
     expect(getDiagnosisPainTypeLabel("trainer-coverage-gap")).toBe("带教没人盯");
+    expect(getDiagnosisPainTypeLabel("picking-wave-delay")).toBe("波次延迟");
+    expect(getDiagnosisPainTypeLabel("mispick-recheck-loop")).toBe("拣配反复复核");
+    expect(getDiagnosisPainTypeLabel("dock-handoff-bottleneck")).toBe("月台交接堵塞");
   });
 });

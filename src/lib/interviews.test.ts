@@ -290,6 +290,29 @@ describe("interview services", () => {
     );
   });
 
+  it("creates a warehouse picking session for dispatch coordination breakdowns", async () => {
+    prismaMock.interviewSession.create.mockResolvedValue({ id: "session-warehouse-picking" });
+
+    await createInterviewSessionForUser("user-1", "warehouse-picking-dispatch" as never);
+
+    expect(generateGuidedQuestionMock).toHaveBeenCalledWith(
+      expect.stringContaining("拣货出库最常卡在哪一类"),
+      expect.objectContaining({
+        railKey: "warehouse-picking-dispatch",
+      }),
+    );
+    expect(prismaMock.interviewSession.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          railKey: "warehouse-picking-dispatch",
+          state: expect.objectContaining({
+            railKey: "warehouse-picking-dispatch",
+          }),
+        }),
+      }),
+    );
+  });
+
   it("creates a store service complaint session for peak-hour service breakdowns", async () => {
     prismaMock.interviewSession.create.mockResolvedValue({ id: "session-store-service" });
 

@@ -11,6 +11,7 @@ matters, and whether they need to do anything.
 
 - Dedicated `store-promo-execution` rail for store campaign launch, display execution, and signage consistency diagnosis
 - Dedicated `store-training-onboarding` rail for store onboarding ramp, SOP consistency, and trainer coverage diagnosis
+- Dedicated `warehouse-picking-dispatch` rail for warehouse picking wave delays, recheck loops, and dock handoff bottlenecks
 - Dedicated `store-shrinkage-waste` rail for store shrinkage, waste, and write-off workflow diagnosis
 - Dedicated `store-equipment-maintenance` rail for store equipment failures, repair lag, and maintenance-response diagnosis
 - Dedicated `store-staffing-scheduling` rail for store staffing, coverage, and schedule instability diagnosis
@@ -21,12 +22,14 @@ matters, and whether they need to do anything.
 - Local smoke coverage for the store shrinkage rail as a first-class scenario
 - Local smoke coverage for the store promo-execution rail as a first-class scenario
 - Local smoke coverage for the store training-onboarding rail as a first-class scenario
+- Local smoke coverage for the warehouse picking-dispatch rail as a first-class scenario
 
 ### Changed
 
 - Login now defaults to direct dev entry in local mode so browser QA does not depend on email delivery
 - Manager-facing pain labels now cover promo launch delays, display breakdowns, and signage mismatches
 - Manager-facing pain labels now cover onboarding ramp delays, SOP mismatches, and trainer coverage gaps
+- Manager-facing pain labels now cover picking wave delays, recheck loops, and dock handoff bottlenecks
 - Manager-facing pain labels now cover shrinkage spikes, waste spikes, and write-off response gaps
 - Manager-facing pain labels now cover repair delays, recurring equipment failures, and vendor response gaps
 - Manager-facing pain labels now cover staffing gaps, schedule instability, and shift handoff breakdowns
