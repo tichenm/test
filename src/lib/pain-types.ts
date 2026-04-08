@@ -8,6 +8,9 @@ export const DIAGNOSIS_PAIN_TYPES = [
   "repair-delay",
   "recurring-breakdown",
   "vendor-response-gap",
+  "shrinkage-spike",
+  "waste-spike",
+  "writeoff-response-gap",
   "service-delay",
   "service-inconsistency",
   "handoff-delay",
@@ -53,6 +56,18 @@ const PAIN_TYPE_ALIASES: Record<string, PainType> = {
   "报修没人接": "vendor-response-gap",
   "维修商没响应": "vendor-response-gap",
   "报修升级没人跟": "vendor-response-gap",
+  "shrinkage-spike": "shrinkage-spike",
+  "损耗偏高": "shrinkage-spike",
+  "损耗突然上升": "shrinkage-spike",
+  "盘点损耗偏高": "shrinkage-spike",
+  "waste-spike": "waste-spike",
+  "报废偏多": "waste-spike",
+  "临期报废偏多": "waste-spike",
+  "报废突然变多": "waste-spike",
+  "writeoff-response-gap": "writeoff-response-gap",
+  "报损没人跟": "writeoff-response-gap",
+  "报损迟迟没人确认": "writeoff-response-gap",
+  "报损升级没人跟": "writeoff-response-gap",
   "service-delay": "service-delay",
   "等待太久": "service-delay",
   "等待过长": "service-delay",
@@ -96,6 +111,12 @@ export function getDiagnosisPainTypeLabel(painType: string) {
       return "反复故障";
     case "vendor-response-gap":
       return "报修没人接";
+    case "shrinkage-spike":
+      return "损耗偏高";
+    case "waste-spike":
+      return "报废偏多";
+    case "writeoff-response-gap":
+      return "报损没人跟";
     case "service-delay":
       return "等待过长";
     case "service-inconsistency":

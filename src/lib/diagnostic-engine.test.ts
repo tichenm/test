@@ -286,6 +286,19 @@ describe("diagnostic engine", () => {
     );
   });
 
+  it("uses shrinkage wording for store shrinkage interviews", () => {
+    const initial = createInterviewState("store-shrinkage-waste" as never);
+
+    const afterSymptom = advanceInterview(initial, {
+      painType: "shrinkage-spike" as never,
+    }).state;
+
+    expect(afterSymptom.currentStep).toBe("frequency-pattern");
+    expect(getCurrentStepDefinition(afterSymptom).prompt(afterSymptom)).toContain(
+      "损耗明显偏高",
+    );
+  });
+
   it("builds staffing diagnosis copy for unstable schedule coverage", () => {
     let state = createInterviewState("store-staffing-scheduling" as never);
 
@@ -341,6 +354,35 @@ describe("diagnostic engine", () => {
       severity: "medium",
       likelyRootCause: expect.stringContaining("报修升级"),
       nextAction: expect.stringContaining("升级负责人"),
+    });
+  });
+
+  it("builds shrinkage diagnosis copy for write-off response gaps", () => {
+    let state = createInterviewState("store-shrinkage-waste" as never);
+
+    state = advanceInterview(state, { painType: "writeoff-response-gap" as never }).state;
+    state = advanceInterview(state, { frequency: "最近两周每周都要补一次" }).state;
+    state = advanceInterview(state, { timeWindow: "闭店复盘和周盘点前" }).state;
+    state = advanceInterview(state, {
+      affectedScope: "鲜食、即饮和临期货架",
+    }).state;
+    state = advanceInterview(state, {
+      peopleInvolved: "店长、值班店长、盘点伙伴和区域督导",
+    }).state;
+    state = advanceInterview(state, {
+      currentWorkaround: "店长手工补表并反复催确认报损",
+    }).state;
+    const completion = advanceInterview(state, {
+      operationalImpact: "报损口径和在库数总是对不上，复盘只能继续追人",
+    });
+
+    const record = buildDiagnosisRecord(completion.state);
+
+    expect(record).toMatchObject({
+      painType: "writeoff-response-gap",
+      severity: "medium",
+      likelyRootCause: expect.stringContaining("报损升级"),
+      nextAction: expect.stringContaining("报损负责人"),
     });
   });
 

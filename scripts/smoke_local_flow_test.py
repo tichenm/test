@@ -69,6 +69,16 @@ class SmokeLocalFlowScenarioTests(unittest.TestCase):
         self.assertEqual(scenario["expectedPainType"], "repair-delay")
         self.assertEqual(scenario["answers"][0], "维修太慢")
 
+    def test_supports_store_shrinkage_waste_scenario(self) -> None:
+        scenario = get_smoke_scenario("store-shrinkage-waste")
+
+        self.assertEqual(scenario["railKey"], "store-shrinkage-waste")
+        self.assertEqual(scenario["label"], "门店损耗与报废")
+        self.assertEqual(scenario["storeName"], "五角场店")
+        self.assertEqual(scenario["roleName"], "门店店长")
+        self.assertEqual(scenario["expectedPainType"], "shrinkage-spike")
+        self.assertEqual(scenario["answers"][0], "损耗偏高")
+
     def test_builds_post_run_markers_for_history_and_insights_checks(self) -> None:
         scenario = get_smoke_scenario("store-service-complaints")
 

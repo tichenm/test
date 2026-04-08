@@ -198,6 +198,29 @@ describe("interview services", () => {
     );
   });
 
+  it("creates a store shrinkage session for loss and write-off breakdowns", async () => {
+    prismaMock.interviewSession.create.mockResolvedValue({ id: "session-store-shrinkage" });
+
+    await createInterviewSessionForUser("user-1", "store-shrinkage-waste" as never);
+
+    expect(generateGuidedQuestionMock).toHaveBeenCalledWith(
+      expect.stringContaining("损耗问题最常卡在哪一类"),
+      expect.objectContaining({
+        railKey: "store-shrinkage-waste",
+      }),
+    );
+    expect(prismaMock.interviewSession.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          railKey: "store-shrinkage-waste",
+          state: expect.objectContaining({
+            railKey: "store-shrinkage-waste",
+          }),
+        }),
+      }),
+    );
+  });
+
   it("creates a project rollout handoff session for cross-team launch coordination", async () => {
     prismaMock.interviewSession.create.mockResolvedValue({ id: "session-project-rollout" });
 

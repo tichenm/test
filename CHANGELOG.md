@@ -9,16 +9,19 @@ matters, and whether they need to do anything.
 
 ### Added
 
+- Dedicated `store-shrinkage-waste` rail for store shrinkage, waste, and write-off workflow diagnosis
 - Dedicated `store-equipment-maintenance` rail for store equipment failures, repair lag, and maintenance-response diagnosis
 - Dedicated `store-staffing-scheduling` rail for store staffing, coverage, and schedule instability diagnosis
 - Dedicated `store-service-complaints` rail for peak-hour service experience and complaint diagnosis
 - Local smoke coverage for the service-complaint rail, including history and insights visibility checks
 - Local smoke coverage for the store staffing rail as a first-class scenario
 - Local smoke coverage for the store equipment rail as a first-class scenario
+- Local smoke coverage for the store shrinkage rail as a first-class scenario
 
 ### Changed
 
 - Login now defaults to direct dev entry in local mode so browser QA does not depend on email delivery
+- Manager-facing pain labels now cover shrinkage spikes, waste spikes, and write-off response gaps
 - Manager-facing pain labels now cover repair delays, recurring equipment failures, and vendor response gaps
 - Manager-facing pain labels now cover staffing gaps, schedule instability, and shift handoff breakdowns
 - The service-complaint rail now normalizes Chinese first-step symptom answers into canonical internal pain types

@@ -8,7 +8,7 @@ real pain lives.
 ## Current Product Slice
 
 - Guided diagnosis flow with rail-specific questioning
-- Dedicated rails for inventory, warehouse receiving, store stock control, store staffing, store equipment maintenance, store service complaints, and project handoff workflows
+- Dedicated rails for inventory, warehouse receiving, store stock control, store staffing, store equipment maintenance, store shrinkage, store service complaints, and project handoff workflows
 - Email magic-link auth with NextAuth
 - Direct dev login path for local QA without waiting on email
 - Prisma persistence for interview sessions, transcripts, and diagnoses
@@ -68,6 +68,7 @@ npm run smoke:local
 python3 scripts/smoke_local_flow.py --rail-key store-service-complaints
 python3 scripts/smoke_local_flow.py --rail-key store-staffing-scheduling
 python3 scripts/smoke_local_flow.py --rail-key store-equipment-maintenance
+python3 scripts/smoke_local_flow.py --rail-key store-shrinkage-waste
 python3 scripts/smoke_local_flow.py --help
 ```
 

@@ -45,6 +45,9 @@ describe("interview presenters", () => {
     expect(getInterviewRailLabel("store-equipment-maintenance")).toBe(
       "门店设备故障与维修响应",
     );
+    expect(getInterviewRailLabel("store-shrinkage-waste")).toBe(
+      "门店损耗与报废",
+    );
     expect(getInterviewRailLabel("store-service-complaints")).toBe(
       "门店服务体验与客诉",
     );
@@ -90,5 +93,8 @@ describe("interview presenters", () => {
     expect(getDiagnosisPainTypeLabel("repair-delay")).toBe("维修太慢");
     expect(getDiagnosisPainTypeLabel("recurring-breakdown")).toBe("反复故障");
     expect(getDiagnosisPainTypeLabel("vendor-response-gap")).toBe("报修没人接");
+    expect(getDiagnosisPainTypeLabel("shrinkage-spike")).toBe("损耗偏高");
+    expect(getDiagnosisPainTypeLabel("waste-spike")).toBe("报废偏多");
+    expect(getDiagnosisPainTypeLabel("writeoff-response-gap")).toBe("报损没人跟");
   });
 });

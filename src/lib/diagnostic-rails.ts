@@ -7,6 +7,7 @@ export type RailKey =
   | "store-inventory-control"
   | "store-staffing-scheduling"
   | "store-equipment-maintenance"
+  | "store-shrinkage-waste"
   | "store-service-complaints"
   | "project-rollout-handoff"
   | "warehouse-receiving";
@@ -113,6 +114,12 @@ const equipmentSymptomChoices = [
   { label: "维修太慢", value: "repair-delay" },
   { label: "反复坏", value: "recurring-breakdown" },
   { label: "报修没人接", value: "vendor-response-gap" },
+] as const;
+
+const shrinkageSymptomChoices = [
+  { label: "损耗偏高", value: "shrinkage-spike" },
+  { label: "报废偏多", value: "waste-spike" },
+  { label: "报损没人跟", value: "writeoff-response-gap" },
 ] as const;
 
 const projectSymptomChoices = [
@@ -718,6 +725,120 @@ const storeEquipmentMaintenanceRail: DiagnosticRail = {
   },
 };
 
+const storeShrinkageWasteRail: DiagnosticRail = {
+  key: "store-shrinkage-waste",
+  label: "门店损耗与报废",
+  workbenchSummary:
+    "把门店损耗偏高、临期报废和报损流程卡点收敛成清晰诊断，并给店长一个先能落地的纠偏动作。",
+  interviewContextLabel: "门店损耗与报废",
+  stepOrder: sharedStepOrder,
+  steps: {
+    "problem-symptom": {
+      key: "problem-symptom",
+      field: "painType",
+      suggestedAnswers: shrinkageSymptomChoices,
+      prompt: () =>
+        "损耗问题最常卡在哪一类，损耗偏高、报废偏多，还是报损没人跟？",
+    },
+    "frequency-pattern": {
+      key: "frequency-pattern",
+      field: "frequency",
+      prompt: (state) => {
+        switch (state.fields.painType) {
+          case "shrinkage-spike":
+            return "损耗明显偏高、盘点一看就不对的情况，通常多久会出现一次？";
+          case "waste-spike":
+            return "临期或变质导致报废突然变多的情况，通常多久会出现一次？";
+          case "writeoff-response-gap":
+            return "报损提了以后迟迟没人确认、需要反复追的情况，通常多久会出现一次？";
+          default:
+            return "这个损耗问题通常多久出现一次？";
+        }
+      },
+    },
+    "time-window": {
+      key: "time-window",
+      field: "timeWindow",
+      prompt: () =>
+        "这个问题最常在什么时候暴露出来，收货后、闭店复盘、周盘点前，还是促销切档时？",
+    },
+    "affected-scope": {
+      key: "affected-scope",
+      field: "affectedScope",
+      prompt: () =>
+        "最常受影响的是哪些品类、货架、后仓位置，或必须及时处理的报损动作？",
+    },
+    "people-involved": {
+      key: "people-involved",
+      field: "peopleInvolved",
+      prompt: () =>
+        "这个问题出现时，通常会牵涉哪些人，店长、值班店长、盘点伙伴、鲜食负责人，还是区域督导？",
+    },
+    "current-workaround": {
+      key: "current-workaround",
+      field: "currentWorkaround",
+      prompt: () =>
+        "团队现在通常怎么临时补救，是手工补表、临时调货、现场折价清货，还是反复追报损确认？",
+    },
+    "operational-impact": {
+      key: "operational-impact",
+      field: "operationalImpact",
+      prompt: () =>
+        "这个问题会给库存准确性、毛利、食品安全，或门店复盘带来什么影响？",
+    },
+  },
+  buildDiagnosis: (fields) => {
+    if (fields.painType === "shrinkage-spike") {
+      return {
+        painType: fields.painType,
+        severity: "high",
+        frequency: fields.frequency,
+        timeWindow: fields.timeWindow,
+        affectedScope: fields.affectedScope,
+        peopleInvolved: fields.peopleInvolved,
+        currentWorkaround: fields.currentWorkaround,
+        operationalImpact: fields.operationalImpact,
+        likelyRootCause:
+          "门店还没有把高风险品类的损耗触发点和责任动作稳定下来，所以问题总是在盘点时集中暴露，而不是在现场被提前拦住。",
+        nextAction:
+          "先挑一个损耗最高的品类，把过去两周的收货、陈列、折价和报损动作串起来，看损耗第一次失控发生在哪个环节。",
+      };
+    }
+
+    if (fields.painType === "waste-spike") {
+      return {
+        painType: fields.painType,
+        severity: "medium",
+        frequency: fields.frequency,
+        timeWindow: fields.timeWindow,
+        affectedScope: fields.affectedScope,
+        peopleInvolved: fields.peopleInvolved,
+        currentWorkaround: fields.currentWorkaround,
+        operationalImpact: fields.operationalImpact,
+        likelyRootCause:
+          "临期处理和报废决策一直在最后一刻发生，说明门店没有把预警时点、折价动作和清货责任提前锁住。",
+        nextAction:
+          "先复盘一个最近报废最多的品类，把临期预警时间、折价动作和最终报废时点放在一起，看哪个决策总是发生得太晚。",
+      };
+    }
+
+    return {
+      painType: fields.painType,
+      severity: "medium",
+      frequency: fields.frequency,
+      timeWindow: fields.timeWindow,
+      affectedScope: fields.affectedScope,
+      peopleInvolved: fields.peopleInvolved,
+      currentWorkaround: fields.currentWorkaround,
+      operationalImpact: fields.operationalImpact,
+      likelyRootCause:
+        "报损升级没有一个明确 owner 和关闭机制，所以门店在补表和追确认之间来回消耗，真实损耗也迟迟落不到可用数据里。",
+      nextAction:
+        "先为最常卡住的报损场景指定一个报损负责人，并给出固定确认时点，别再让报损记录停在待确认状态里。",
+    };
+  },
+};
+
 const storeServiceComplaintsRail: DiagnosticRail = {
   key: "store-service-complaints",
   label: "门店服务体验与客诉",
@@ -1017,6 +1138,7 @@ const diagnosticRails: Record<RailKey, DiagnosticRail> = {
   "store-inventory-control": storeInventoryControlRail,
   "store-staffing-scheduling": storeStaffingSchedulingRail,
   "store-equipment-maintenance": storeEquipmentMaintenanceRail,
+  "store-shrinkage-waste": storeShrinkageWasteRail,
   "store-service-complaints": storeServiceComplaintsRail,
   "project-rollout-handoff": projectRolloutHandoffRail,
   "warehouse-receiving": warehouseReceivingRail,
