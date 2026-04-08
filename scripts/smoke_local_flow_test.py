@@ -79,6 +79,16 @@ class SmokeLocalFlowScenarioTests(unittest.TestCase):
         self.assertEqual(scenario["expectedPainType"], "shrinkage-spike")
         self.assertEqual(scenario["answers"][0], "损耗偏高")
 
+    def test_supports_store_promo_execution_scenario(self) -> None:
+        scenario = get_smoke_scenario("store-promo-execution")
+
+        self.assertEqual(scenario["railKey"], "store-promo-execution")
+        self.assertEqual(scenario["label"], "门店促销执行与活动落地")
+        self.assertEqual(scenario["storeName"], "浦东世纪汇店")
+        self.assertEqual(scenario["roleName"], "门店店长")
+        self.assertEqual(scenario["expectedPainType"], "promo-launch-delay")
+        self.assertEqual(scenario["answers"][0], "活动落地太慢")
+
     def test_builds_post_run_markers_for_history_and_insights_checks(self) -> None:
         scenario = get_smoke_scenario("store-service-complaints")
 

@@ -48,6 +48,9 @@ describe("interview presenters", () => {
     expect(getInterviewRailLabel("store-shrinkage-waste")).toBe(
       "门店损耗与报废",
     );
+    expect(getInterviewRailLabel("store-promo-execution")).toBe(
+      "门店促销执行与活动落地",
+    );
     expect(getInterviewRailLabel("store-service-complaints")).toBe(
       "门店服务体验与客诉",
     );
@@ -96,5 +99,8 @@ describe("interview presenters", () => {
     expect(getDiagnosisPainTypeLabel("shrinkage-spike")).toBe("损耗偏高");
     expect(getDiagnosisPainTypeLabel("waste-spike")).toBe("报废偏多");
     expect(getDiagnosisPainTypeLabel("writeoff-response-gap")).toBe("报损没人跟");
+    expect(getDiagnosisPainTypeLabel("promo-launch-delay")).toBe("活动落地太慢");
+    expect(getDiagnosisPainTypeLabel("display-breakdown")).toBe("陈列没到位");
+    expect(getDiagnosisPainTypeLabel("signage-mismatch")).toBe("价签口径不一致");
   });
 });

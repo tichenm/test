@@ -8,6 +8,7 @@ export type RailKey =
   | "store-staffing-scheduling"
   | "store-equipment-maintenance"
   | "store-shrinkage-waste"
+  | "store-promo-execution"
   | "store-service-complaints"
   | "project-rollout-handoff"
   | "warehouse-receiving";
@@ -120,6 +121,12 @@ const shrinkageSymptomChoices = [
   { label: "损耗偏高", value: "shrinkage-spike" },
   { label: "报废偏多", value: "waste-spike" },
   { label: "报损没人跟", value: "writeoff-response-gap" },
+] as const;
+
+const promoSymptomChoices = [
+  { label: "活动落地太慢", value: "promo-launch-delay" },
+  { label: "陈列没到位", value: "display-breakdown" },
+  { label: "价签口径不一致", value: "signage-mismatch" },
 ] as const;
 
 const projectSymptomChoices = [
@@ -839,6 +846,120 @@ const storeShrinkageWasteRail: DiagnosticRail = {
   },
 };
 
+const storePromoExecutionRail: DiagnosticRail = {
+  key: "store-promo-execution",
+  label: "门店促销执行与活动落地",
+  workbenchSummary:
+    "把活动上线延迟、陈列断档和价签口径问题收敛成清晰诊断，并给店长一个先能落地的促销执行动作。",
+  interviewContextLabel: "门店促销执行与活动落地",
+  stepOrder: sharedStepOrder,
+  steps: {
+    "problem-symptom": {
+      key: "problem-symptom",
+      field: "painType",
+      suggestedAnswers: promoSymptomChoices,
+      prompt: () =>
+        "促销执行最常卡在哪一类，活动落地太慢、陈列没到位，还是价签口径不一致？",
+    },
+    "frequency-pattern": {
+      key: "frequency-pattern",
+      field: "frequency",
+      prompt: (state) => {
+        switch (state.fields.painType) {
+          case "promo-launch-delay":
+            return "活动该上没上、上线动作整体延后的情况，通常多久会出现一次？";
+          case "display-breakdown":
+            return "陈列没有按时到位、活动货架断档的情况，通常多久会出现一次？";
+          case "signage-mismatch":
+            return "价签、收银和现场口径不一致的情况，通常多久会出现一次？";
+          default:
+            return "这个促销执行问题通常多久出现一次？";
+        }
+      },
+    },
+    "time-window": {
+      key: "time-window",
+      field: "timeWindow",
+      prompt: () =>
+        "这个问题最常在什么时候暴露，活动切档前、开档当天、周末高峰，还是闭店复盘时？",
+    },
+    "affected-scope": {
+      key: "affected-scope",
+      field: "affectedScope",
+      prompt: () =>
+        "最常受影响的是哪些活动位、端架、价签点位、收银流程，或重点促销品类？",
+    },
+    "people-involved": {
+      key: "people-involved",
+      field: "peopleInvolved",
+      prompt: () =>
+        "这个问题出现时，通常会牵涉哪些人，店长、值班店长、陈列伙伴、收银伙伴，还是区域营运？",
+    },
+    "current-workaround": {
+      key: "current-workaround",
+      field: "currentWorkaround",
+      prompt: () =>
+        "团队现在通常怎么临时补位，是手工改价签、现场解释、临时改陈列，还是活动后补记录？",
+    },
+    "operational-impact": {
+      key: "operational-impact",
+      field: "operationalImpact",
+      prompt: () =>
+        "这个问题会给促销转化、顾客体验、执行节奏，或门店复盘带来什么影响？",
+    },
+  },
+  buildDiagnosis: (fields) => {
+    if (fields.painType === "promo-launch-delay") {
+      return {
+        painType: fields.painType,
+        severity: "high",
+        frequency: fields.frequency,
+        timeWindow: fields.timeWindow,
+        affectedScope: fields.affectedScope,
+        peopleInvolved: fields.peopleInvolved,
+        currentWorkaround: fields.currentWorkaround,
+        operationalImpact: fields.operationalImpact,
+        likelyRootCause:
+          "活动准备和门店执行之间缺少一个前置就绪检查点，所以临近开档才集中暴露缺口，导致落地整体后移。",
+        nextAction:
+          "先为下一次活动设一个开档前 24 小时检查点，把货、陈列、价签和口径一次对齐，避免开档当天才补动作。",
+      };
+    }
+
+    if (fields.painType === "display-breakdown") {
+      return {
+        painType: fields.painType,
+        severity: "medium",
+        frequency: fields.frequency,
+        timeWindow: fields.timeWindow,
+        affectedScope: fields.affectedScope,
+        peopleInvolved: fields.peopleInvolved,
+        currentWorkaround: fields.currentWorkaround,
+        operationalImpact: fields.operationalImpact,
+        likelyRootCause:
+          "活动陈列责任和完成标准没有被固定下来，导致每次切档都靠临时补位完成，陈列质量不可控。",
+        nextAction:
+          "先把一个高频活动位拆成可核对的陈列清单，明确谁搭、何时验收、未完成怎么升级。",
+      };
+    }
+
+    return {
+      painType: fields.painType,
+      severity: "medium",
+      frequency: fields.frequency,
+      timeWindow: fields.timeWindow,
+      affectedScope: fields.affectedScope,
+      peopleInvolved: fields.peopleInvolved,
+      currentWorkaround: fields.currentWorkaround,
+      operationalImpact: fields.operationalImpact,
+      likelyRootCause:
+        "活动价签没有形成统一口径和关闭机制，所以现场、收银和复盘的数据总在分叉，纠错成本持续上升。",
+      nextAction:
+        "先为当前活动指定一个价签负责人，在开档前完成一次点位抽检，确保现场价签与收银口径一致再放行。",
+    };
+  },
+};
+
 const storeServiceComplaintsRail: DiagnosticRail = {
   key: "store-service-complaints",
   label: "门店服务体验与客诉",
@@ -1139,6 +1260,7 @@ const diagnosticRails: Record<RailKey, DiagnosticRail> = {
   "store-staffing-scheduling": storeStaffingSchedulingRail,
   "store-equipment-maintenance": storeEquipmentMaintenanceRail,
   "store-shrinkage-waste": storeShrinkageWasteRail,
+  "store-promo-execution": storePromoExecutionRail,
   "store-service-complaints": storeServiceComplaintsRail,
   "project-rollout-handoff": projectRolloutHandoffRail,
   "warehouse-receiving": warehouseReceivingRail,

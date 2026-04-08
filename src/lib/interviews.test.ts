@@ -221,6 +221,29 @@ describe("interview services", () => {
     );
   });
 
+  it("creates a store promo session for campaign execution breakdowns", async () => {
+    prismaMock.interviewSession.create.mockResolvedValue({ id: "session-store-promo" });
+
+    await createInterviewSessionForUser("user-1", "store-promo-execution" as never);
+
+    expect(generateGuidedQuestionMock).toHaveBeenCalledWith(
+      expect.stringContaining("促销执行最常卡在哪一类"),
+      expect.objectContaining({
+        railKey: "store-promo-execution",
+      }),
+    );
+    expect(prismaMock.interviewSession.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          railKey: "store-promo-execution",
+          state: expect.objectContaining({
+            railKey: "store-promo-execution",
+          }),
+        }),
+      }),
+    );
+  });
+
   it("creates a project rollout handoff session for cross-team launch coordination", async () => {
     prismaMock.interviewSession.create.mockResolvedValue({ id: "session-project-rollout" });
 

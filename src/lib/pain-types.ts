@@ -11,6 +11,9 @@ export const DIAGNOSIS_PAIN_TYPES = [
   "shrinkage-spike",
   "waste-spike",
   "writeoff-response-gap",
+  "promo-launch-delay",
+  "display-breakdown",
+  "signage-mismatch",
   "service-delay",
   "service-inconsistency",
   "handoff-delay",
@@ -68,6 +71,18 @@ const PAIN_TYPE_ALIASES: Record<string, PainType> = {
   "报损没人跟": "writeoff-response-gap",
   "报损迟迟没人确认": "writeoff-response-gap",
   "报损升级没人跟": "writeoff-response-gap",
+  "promo-launch-delay": "promo-launch-delay",
+  "活动落地太慢": "promo-launch-delay",
+  "活动该上没上": "promo-launch-delay",
+  "促销上线延迟": "promo-launch-delay",
+  "display-breakdown": "display-breakdown",
+  "陈列没到位": "display-breakdown",
+  "陈列执行断档": "display-breakdown",
+  "端架没搭好": "display-breakdown",
+  "signage-mismatch": "signage-mismatch",
+  "价签口径不一致": "signage-mismatch",
+  "价签和收银不一致": "signage-mismatch",
+  "活动价签不一致": "signage-mismatch",
   "service-delay": "service-delay",
   "等待太久": "service-delay",
   "等待过长": "service-delay",
@@ -117,6 +132,12 @@ export function getDiagnosisPainTypeLabel(painType: string) {
       return "报废偏多";
     case "writeoff-response-gap":
       return "报损没人跟";
+    case "promo-launch-delay":
+      return "活动落地太慢";
+    case "display-breakdown":
+      return "陈列没到位";
+    case "signage-mismatch":
+      return "价签口径不一致";
     case "service-delay":
       return "等待过长";
     case "service-inconsistency":

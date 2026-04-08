@@ -299,6 +299,19 @@ describe("diagnostic engine", () => {
     );
   });
 
+  it("uses promo wording for store promo interviews", () => {
+    const initial = createInterviewState("store-promo-execution" as never);
+
+    const afterSymptom = advanceInterview(initial, {
+      painType: "promo-launch-delay" as never,
+    }).state;
+
+    expect(afterSymptom.currentStep).toBe("frequency-pattern");
+    expect(getCurrentStepDefinition(afterSymptom).prompt(afterSymptom)).toContain(
+      "活动该上没上",
+    );
+  });
+
   it("builds staffing diagnosis copy for unstable schedule coverage", () => {
     let state = createInterviewState("store-staffing-scheduling" as never);
 
@@ -383,6 +396,35 @@ describe("diagnostic engine", () => {
       severity: "medium",
       likelyRootCause: expect.stringContaining("报损升级"),
       nextAction: expect.stringContaining("报损负责人"),
+    });
+  });
+
+  it("builds promo diagnosis copy for signage mismatch", () => {
+    let state = createInterviewState("store-promo-execution" as never);
+
+    state = advanceInterview(state, { painType: "signage-mismatch" as never }).state;
+    state = advanceInterview(state, { frequency: "每次活动切档都会出一次" }).state;
+    state = advanceInterview(state, { timeWindow: "活动切档前一晚和开档当天" }).state;
+    state = advanceInterview(state, {
+      affectedScope: "端架、价签和收银口径",
+    }).state;
+    state = advanceInterview(state, {
+      peopleInvolved: "店长、值班店长、陈列伙伴和收银伙伴",
+    }).state;
+    state = advanceInterview(state, {
+      currentWorkaround: "店长手工改价签并现场统一解释口径",
+    }).state;
+    const completion = advanceInterview(state, {
+      operationalImpact: "顾客问价变多，现场只能边卖边纠错",
+    });
+
+    const record = buildDiagnosisRecord(completion.state);
+
+    expect(record).toMatchObject({
+      painType: "signage-mismatch",
+      severity: "medium",
+      likelyRootCause: expect.stringContaining("统一口径"),
+      nextAction: expect.stringContaining("价签负责人"),
     });
   });
 
