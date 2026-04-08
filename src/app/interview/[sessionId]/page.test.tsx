@@ -100,4 +100,41 @@ describe("InterviewPage", () => {
     expect(screen.queryByRole("button", { name: "等待太久" })).not.toBeInTheDocument();
     expect(screen.getByLabelText("你的回答")).toBeInTheDocument();
   });
+
+  it("renders quick choices again on later service steps that benefit from structured input", async () => {
+    const state = createInterviewState("store-service-complaints" as never);
+    state.currentStep = "affected-scope";
+    state.fields = {
+      painType: "service-delay" as never,
+      frequency: "每个周末晚高峰",
+      timeWindow: "晚高峰和交接班前后",
+    };
+
+    getAuthSessionMock.mockResolvedValue({ user: { id: "user-1" } });
+    getInterviewSessionForUserMock.mockResolvedValue({
+      id: "session-3",
+      railKey: "store-service-complaints",
+      storeName: "人民广场店",
+      roleName: "门店店长",
+      status: "ACTIVE",
+      state,
+      messages: [
+        {
+          id: "m-3",
+          role: "ASSISTANT",
+          content:
+            "好，这个信息有帮助。再补充一点： 最常卡住的是哪个服务环节，迎宾、点单、收银、出餐取货、现场解释，还是客诉处置？",
+          stepKey: "affected-scope",
+        },
+      ],
+    });
+
+    render(await InterviewPage({ params: Promise.resolve({ sessionId: "session-3" }) }));
+
+    expect(screen.getByText("快捷选择")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "迎宾分流" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "出餐取货" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "现场解释安抚" })).toBeInTheDocument();
+    expect(screen.getByLabelText("你的回答")).toBeInTheDocument();
+  });
 });

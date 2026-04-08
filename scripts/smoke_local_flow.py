@@ -21,6 +21,16 @@ SIGN_IN_EMAIL = os.environ.get("SMOKE_EMAIL", f"manager+{uuid.uuid4().hex[:8]}@s
 DATABASE_URL = os.environ.get("DATABASE_URL")
 DEV_LOG_PATH = Path(".next/dev/logs/next-development.log")
 DEFAULT_RAIL_KEY = "inventory-replenishment"
+STEP_KEYS = (
+    "problem-symptom",
+    "frequency-pattern",
+    "time-window",
+    "affected-scope",
+    "people-involved",
+    "current-workaround",
+    "operational-impact",
+)
+QUICK_CHOICE_STEP_KEYS = {"affected-scope", "people-involved"}
 SMOKE_SCENARIOS = {
     "inventory-replenishment": {
         "label": "库存与补货",
@@ -57,6 +67,10 @@ SMOKE_SCENARIOS = {
         "storeName": "人民广场店",
         "roleName": "门店店长",
         "expectedPainType": "service-delay",
+        "quickChoiceAnswers": {
+            "affected-scope": "现场解释安抚",
+            "people-involved": "出餐和值班店长",
+        },
         "answers": [
             "等待太久",
             "每个周末晚高峰",
@@ -119,11 +133,52 @@ def build_step_answer(
 ) -> str:
     answers = scenario["answers"]
     require(isinstance(answers, list), "Smoke scenario answers must be a list")
+    step_key = STEP_KEYS[step_index - 1]
 
     if step_index == 1 and first_step_mode == "quick-choice":
         return str(scenario["expectedPainType"])
 
+    if first_step_mode == "quick-choice":
+        quick_choice_answers = scenario.get("quickChoiceAnswers")
+        require(
+            quick_choice_answers is None or isinstance(quick_choice_answers, dict),
+            "Smoke scenario quickChoiceAnswers must be a mapping",
+        )
+        if isinstance(quick_choice_answers, dict) and step_key in quick_choice_answers:
+            return str(quick_choice_answers[step_key])
+
     return str(answers[step_index - 1])
+
+
+def parse_quick_choice_steps(value: str | None) -> set[str]:
+    if not value:
+        return set()
+
+    step_keys = {item.strip() for item in value.split(",") if item.strip()}
+    unsupported_step_keys = sorted(step_keys - QUICK_CHOICE_STEP_KEYS)
+    require(
+        not unsupported_step_keys,
+        "Unsupported quick-choice steps: "
+        + ", ".join(unsupported_step_keys)
+        + ". Supported values: "
+        + ", ".join(sorted(QUICK_CHOICE_STEP_KEYS)),
+    )
+    return step_keys
+
+
+def build_step_mode(
+    step_index: int,
+    step_key: str,
+    first_step_mode: str,
+    quick_choice_steps: set[str],
+) -> str:
+    if step_index == 1:
+        return first_step_mode
+
+    if step_key in quick_choice_steps:
+        return "quick-choice"
+
+    return "freeform"
 
 
 def extract_forms(page: str) -> list[str]:
@@ -407,6 +462,11 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["freeform", "quick-choice"],
         help="Choose whether the first symptom answer is submitted through the textarea flow or the quick-choice buttons.",
     )
+    parser.add_argument(
+        "--quick-choice-steps",
+        default="",
+        help="Comma-separated later step keys to submit through quick-choice buttons. Supported values: affected-scope,people-involved.",
+    )
     return parser
 
 
@@ -422,6 +482,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     SIGN_IN_EMAIL = args.email or os.environ.get("SMOKE_EMAIL", SIGN_IN_EMAIL)
     scenario = get_smoke_scenario(args.rail_key)
+    quick_choice_steps = parse_quick_choice_steps(args.quick_choice_steps)
     cookie_file = tempfile.NamedTemporaryFile(prefix="guided-pain-", suffix=".cookies", delete=False)
     cookie_file.close()
 
@@ -452,15 +513,20 @@ def main(argv: list[str] | None = None) -> None:
     answers = scenario["answers"]
     require(isinstance(answers, list), "Smoke scenario answers must be a list")
 
-    for index, _ in enumerate(answers, start=1):
+    for index, step_key in enumerate(STEP_KEYS, start=1):
         prompt = html.unescape(
             extract(r'<h1 class="display-title[^>]*">(.*?)</h1>', page, f"step {index} prompt")
         )
         print(f"step {index}: {prompt}")
 
-        first_step_mode = args.first_step_mode if index == 1 else "freeform"
-        answer = build_step_answer(scenario, index, first_step_mode)
-        submission_fields = build_answer_submission_fields(page, answer, first_step_mode)
+        step_mode = build_step_mode(
+            index,
+            step_key,
+            args.first_step_mode,
+            quick_choice_steps,
+        )
+        answer = build_step_answer(scenario, index, step_mode)
+        submission_fields = build_answer_submission_fields(page, answer, step_mode)
 
         current_url, page = post_form(
             opener,

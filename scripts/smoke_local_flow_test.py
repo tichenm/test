@@ -7,12 +7,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from smoke_local_flow import (
     build_answer_submission_fields,
+    build_step_mode,
     build_step_answer,
     build_persistence_expectations,
     build_post_run_markers,
     extract_magic_link,
     get_smoke_scenario,
     normalize_local_redirect,
+    parse_quick_choice_steps,
 )
 
 
@@ -119,6 +121,40 @@ class SmokeLocalFlowScenarioTests(unittest.TestCase):
         self.assertEqual(build_step_answer(scenario, 1, "quick-choice"), "service-delay")
         self.assertEqual(build_step_answer(scenario, 1, "freeform"), "等待太久")
         self.assertEqual(build_step_answer(scenario, 2, "quick-choice"), "每个周末晚高峰")
+
+    def test_uses_step_specific_quick_choice_values_for_later_service_steps(self) -> None:
+        scenario = get_smoke_scenario("store-service-complaints")
+
+        self.assertEqual(build_step_answer(scenario, 4, "quick-choice"), "现场解释安抚")
+        self.assertEqual(build_step_answer(scenario, 5, "quick-choice"), "出餐和值班店长")
+
+    def test_parses_quick_choice_steps_from_step_keys(self) -> None:
+        self.assertEqual(
+            parse_quick_choice_steps("affected-scope,people-involved"),
+            {"affected-scope", "people-involved"},
+        )
+        self.assertEqual(parse_quick_choice_steps(""), set())
+        self.assertEqual(parse_quick_choice_steps(None), set())
+
+    def test_builds_step_mode_for_later_quick_choice_steps(self) -> None:
+        quick_choice_steps = {"affected-scope", "people-involved"}
+
+        self.assertEqual(
+            build_step_mode(1, "problem-symptom", "quick-choice", quick_choice_steps),
+            "quick-choice",
+        )
+        self.assertEqual(
+            build_step_mode(4, "affected-scope", "freeform", quick_choice_steps),
+            "quick-choice",
+        )
+        self.assertEqual(
+            build_step_mode(5, "people-involved", "freeform", quick_choice_steps),
+            "quick-choice",
+        )
+        self.assertEqual(
+            build_step_mode(6, "current-workaround", "freeform", quick_choice_steps),
+            "freeform",
+        )
 
     def test_rejects_unknown_rail_key(self) -> None:
         with self.assertRaises(SystemExit):

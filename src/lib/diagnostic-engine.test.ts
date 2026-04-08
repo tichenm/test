@@ -25,6 +25,35 @@ describe("diagnostic engine", () => {
     ]);
   });
 
+  it("exposes service-step quick choices for affected scope and people alignment", () => {
+    let state = createInterviewState("store-service-complaints" as never);
+
+    state = advanceInterview(state, { painType: "service-delay" as never }).state;
+    state = advanceInterview(state, { frequency: "每个周末晚高峰" }).state;
+    state = advanceInterview(state, { timeWindow: "晚高峰和交接班前后" }).state;
+
+    const affectedScopeStep = getCurrentStepDefinition(state);
+    expect(affectedScopeStep.field).toBe("affectedScope");
+    expect(affectedScopeStep.suggestedAnswers).toEqual([
+      { label: "迎宾分流", value: "迎宾分流" },
+      { label: "点单到收银", value: "点单到收银" },
+      { label: "出餐取货", value: "出餐取货" },
+      { label: "现场解释安抚", value: "现场解释安抚" },
+      { label: "客诉接手处理", value: "客诉接手处理" },
+    ]);
+
+    state = advanceInterview(state, { affectedScope: "出餐取货" }).state;
+
+    const peopleStep = getCurrentStepDefinition(state);
+    expect(peopleStep.field).toBe("peopleInvolved");
+    expect(peopleStep.suggestedAnswers).toEqual([
+      { label: "收银和前场伙伴", value: "收银和前场伙伴" },
+      { label: "前场和出餐伙伴", value: "前场和出餐伙伴" },
+      { label: "出餐和值班店长", value: "出餐和值班店长" },
+      { label: "值班店长和客诉处理人", value: "值班店长和客诉处理人" },
+    ]);
+  });
+
   it("does not advance when the current step field is still missing", () => {
     const initial = createInterviewState("inventory-replenishment");
 

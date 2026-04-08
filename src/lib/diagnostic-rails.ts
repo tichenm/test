@@ -86,6 +86,21 @@ const serviceSymptomChoices = [
   { label: "服务动作接不上", value: "handoff-delay" },
 ] as const;
 
+const serviceScopeChoices = [
+  { label: "迎宾分流", value: "迎宾分流" },
+  { label: "点单到收银", value: "点单到收银" },
+  { label: "出餐取货", value: "出餐取货" },
+  { label: "现场解释安抚", value: "现场解释安抚" },
+  { label: "客诉接手处理", value: "客诉接手处理" },
+] as const;
+
+const servicePeopleChoices = [
+  { label: "收银和前场伙伴", value: "收银和前场伙伴" },
+  { label: "前场和出餐伙伴", value: "前场和出餐伙伴" },
+  { label: "出餐和值班店长", value: "出餐和值班店长" },
+  { label: "值班店长和客诉处理人", value: "值班店长和客诉处理人" },
+] as const;
+
 const projectSymptomChoices = [
   { label: "交接延迟", value: "handoff-delay" },
   { label: "执行偏差", value: "execution-drift" },
@@ -501,12 +516,14 @@ const storeServiceComplaintsRail: DiagnosticRail = {
     "affected-scope": {
       key: "affected-scope",
       field: "affectedScope",
+      suggestedAnswers: serviceScopeChoices,
       prompt: () =>
         "最常卡住的是哪个服务环节，迎宾、点单、收银、出餐取货、现场解释，还是客诉处置？",
     },
     "people-involved": {
       key: "people-involved",
       field: "peopleInvolved",
+      suggestedAnswers: servicePeopleChoices,
       prompt: () =>
         "这个问题出现时，通常会牵涉哪些岗位，收银、前场伙伴、出餐、值班店长，还是客诉处理人？",
     },
