@@ -152,6 +152,29 @@ describe("interview services", () => {
     );
   });
 
+  it("creates a store staffing session for scheduling and coverage breakdowns", async () => {
+    prismaMock.interviewSession.create.mockResolvedValue({ id: "session-store-staffing" });
+
+    await createInterviewSessionForUser("user-1", "store-staffing-scheduling" as never);
+
+    expect(generateGuidedQuestionMock).toHaveBeenCalledWith(
+      expect.stringContaining("排班最常出问题的是哪一类"),
+      expect.objectContaining({
+        railKey: "store-staffing-scheduling",
+      }),
+    );
+    expect(prismaMock.interviewSession.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          railKey: "store-staffing-scheduling",
+          state: expect.objectContaining({
+            railKey: "store-staffing-scheduling",
+          }),
+        }),
+      }),
+    );
+  });
+
   it("creates a project rollout handoff session for cross-team launch coordination", async () => {
     prismaMock.interviewSession.create.mockResolvedValue({ id: "session-project-rollout" });
 

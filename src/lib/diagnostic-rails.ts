@@ -5,6 +5,7 @@ export type RailKey =
   | "inventory-replenishment"
   | "store-stock-replenishment"
   | "store-inventory-control"
+  | "store-staffing-scheduling"
   | "store-service-complaints"
   | "project-rollout-handoff"
   | "warehouse-receiving";
@@ -99,6 +100,12 @@ const servicePeopleChoices = [
   { label: "前场和出餐伙伴", value: "前场和出餐伙伴" },
   { label: "出餐和值班店长", value: "出餐和值班店长" },
   { label: "值班店长和客诉处理人", value: "值班店长和客诉处理人" },
+] as const;
+
+const staffingSymptomChoices = [
+  { label: "人手不够", value: "staffing-gap" },
+  { label: "排班总变", value: "schedule-instability" },
+  { label: "交接接不上", value: "shift-handoff-gap" },
 ] as const;
 
 const projectSymptomChoices = [
@@ -476,6 +483,120 @@ const storeInventoryControlRail: DiagnosticRail = {
   },
 };
 
+const storeStaffingSchedulingRail: DiagnosticRail = {
+  key: "store-staffing-scheduling",
+  label: "门店排班与人手配置",
+  workbenchSummary:
+    "把班次人手不足、临时改班和交接脱节收敛成清晰的排班诊断，并给店长一个先能落地的动作。",
+  interviewContextLabel: "门店排班与人手配置",
+  stepOrder: sharedStepOrder,
+  steps: {
+    "problem-symptom": {
+      key: "problem-symptom",
+      field: "painType",
+      suggestedAnswers: staffingSymptomChoices,
+      prompt: () =>
+        "排班最常出问题的是哪一类，人手不够、排班总变，还是交接接不上？",
+    },
+    "frequency-pattern": {
+      key: "frequency-pattern",
+      field: "frequency",
+      prompt: (state) => {
+        switch (state.fields.painType) {
+          case "staffing-gap":
+            return "班次明显扛不住、需要临时顶人的情况，通常多久会出现一次？";
+          case "schedule-instability":
+            return "排班在最后一刻被改动、临时调人的情况，通常多久会出现一次？";
+          case "shift-handoff-gap":
+            return "前后班交接接不上、信息断层的情况，通常多久会出现一次？";
+          default:
+            return "这个排班问题通常多久出现一次？";
+        }
+      },
+    },
+    "time-window": {
+      key: "time-window",
+      field: "timeWindow",
+      prompt: () =>
+        "这个问题最常在什么时候出现，开店准备、午晚高峰、闭店前，还是促销档期？",
+    },
+    "affected-scope": {
+      key: "affected-scope",
+      field: "affectedScope",
+      prompt: () =>
+        "最常受影响的是哪些班次、岗位、门店区域，或必须按时完成的任务？",
+    },
+    "people-involved": {
+      key: "people-involved",
+      field: "peopleInvolved",
+      prompt: () =>
+        "这个问题出现时，通常会牵涉哪些人，店长、值班店长、全职伙伴、兼职伙伴，还是区域支援？",
+    },
+    "current-workaround": {
+      key: "current-workaround",
+      field: "currentWorkaround",
+      prompt: () =>
+        "团队现在通常怎么临时补位，是拆岗顶岗、临时改班，还是压缩交接动作？",
+    },
+    "operational-impact": {
+      key: "operational-impact",
+      field: "operationalImpact",
+      prompt: () =>
+        "这个问题会给现场服务、补货节奏、员工状态，或当班执行带来什么影响？",
+    },
+  },
+  buildDiagnosis: (fields) => {
+    if (fields.painType === "staffing-gap") {
+      return {
+        painType: fields.painType,
+        severity: "high",
+        frequency: fields.frequency,
+        timeWindow: fields.timeWindow,
+        affectedScope: fields.affectedScope,
+        peopleInvolved: fields.peopleInvolved,
+        currentWorkaround: fields.currentWorkaround,
+        operationalImpact: fields.operationalImpact,
+        likelyRootCause:
+          "班次的人手配置已经和真实客流与任务负荷脱节，所以现场只能不断拆岗顶人，关键动作越忙越容易掉链子。",
+        nextAction:
+          "先拉出最近两周最吃紧的班次，对比客流、任务量和实际到岗，明确先补哪个人手缺口。",
+      };
+    }
+
+    if (fields.painType === "shift-handoff-gap") {
+      return {
+        painType: fields.painType,
+        severity: "medium",
+        frequency: fields.frequency,
+        timeWindow: fields.timeWindow,
+        affectedScope: fields.affectedScope,
+        peopleInvolved: fields.peopleInvolved,
+        currentWorkaround: fields.currentWorkaround,
+        operationalImpact: fields.operationalImpact,
+        likelyRootCause:
+          "前后班靠口头补位完成交接，说明关键任务和责任切换没有被固定下来，所以一忙就会出现信息断层。",
+        nextAction:
+          "在下一次高峰前，把最容易掉链子的交接项写成一页清单，明确谁交、谁接、什么时候确认完成。",
+      };
+    }
+
+    return {
+      painType: fields.painType,
+      severity: "medium",
+      frequency: fields.frequency,
+      timeWindow: fields.timeWindow,
+      affectedScope: fields.affectedScope,
+      peopleInvolved: fields.peopleInvolved,
+      currentWorkaround: fields.currentWorkaround,
+      operationalImpact: fields.operationalImpact,
+      likelyRootCause:
+        "排班在最后一刻频繁改动，说明门店还在用临时调班对冲真实负荷波动，班次稳定性本身已经成了问题。",
+      nextAction:
+        "先挑一个总被临时改动的班次，复盘改班触发点、替班来源和通知时点，把最常见的临时改动先压下来。",
+    };
+  },
+};
+
 const storeServiceComplaintsRail: DiagnosticRail = {
   key: "store-service-complaints",
   label: "门店服务体验与客诉",
@@ -773,6 +894,7 @@ const diagnosticRails: Record<RailKey, DiagnosticRail> = {
   "inventory-replenishment": inventoryReplenishmentRail,
   "store-stock-replenishment": storeStockReplenishmentRail,
   "store-inventory-control": storeInventoryControlRail,
+  "store-staffing-scheduling": storeStaffingSchedulingRail,
   "store-service-complaints": storeServiceComplaintsRail,
   "project-rollout-handoff": projectRolloutHandoffRail,
   "warehouse-receiving": warehouseReceivingRail,

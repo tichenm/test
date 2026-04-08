@@ -9,12 +9,15 @@ matters, and whether they need to do anything.
 
 ### Added
 
+- Dedicated `store-staffing-scheduling` rail for store staffing, coverage, and schedule instability diagnosis
 - Dedicated `store-service-complaints` rail for peak-hour service experience and complaint diagnosis
 - Local smoke coverage for the service-complaint rail, including history and insights visibility checks
+- Local smoke coverage for the store staffing rail as a first-class scenario
 
 ### Changed
 
 - Login now defaults to direct dev entry in local mode so browser QA does not depend on email delivery
+- Manager-facing pain labels now cover staffing gaps, schedule instability, and shift handoff breakdowns
 - The service-complaint rail now normalizes Chinese first-step symptom answers into canonical internal pain types
 - Local smoke now verifies canonical pain type persistence across session state, interview messages, and diagnosis records
 

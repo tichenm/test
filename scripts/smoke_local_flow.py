@@ -81,6 +81,21 @@ SMOKE_SCENARIOS = {
             "顾客等待更久，差评和投诉在高峰后集中出现",
         ],
     },
+    "store-staffing-scheduling": {
+        "label": "门店排班与人手配置",
+        "storeName": "南京西路店",
+        "roleName": "门店店长",
+        "expectedPainType": "schedule-instability",
+        "answers": [
+            "排班总变",
+            "每周都会临时改班两三次",
+            "周末晚高峰和促销档期前",
+            "收银、出餐和闭店整理班次",
+            "店长、值班店长和兼职伙伴",
+            "店长当天临时调班并压缩交接时间",
+            "高峰准备动作总被打乱，现场只能不断救火",
+        ],
+    },
 }
 
 

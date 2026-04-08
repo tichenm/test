@@ -260,6 +260,48 @@ describe("diagnostic engine", () => {
     );
   });
 
+  it("uses staffing wording for store staffing interviews", () => {
+    const initial = createInterviewState("store-staffing-scheduling" as never);
+
+    const afterSymptom = advanceInterview(initial, {
+      painType: "staffing-gap" as never,
+    }).state;
+
+    expect(afterSymptom.currentStep).toBe("frequency-pattern");
+    expect(getCurrentStepDefinition(afterSymptom).prompt(afterSymptom)).toContain(
+      "班次明显扛不住",
+    );
+  });
+
+  it("builds staffing diagnosis copy for unstable schedule coverage", () => {
+    let state = createInterviewState("store-staffing-scheduling" as never);
+
+    state = advanceInterview(state, { painType: "schedule-instability" as never }).state;
+    state = advanceInterview(state, { frequency: "每周都会临时改班两三次" }).state;
+    state = advanceInterview(state, { timeWindow: "周末晚高峰和促销档期前" }).state;
+    state = advanceInterview(state, {
+      affectedScope: "收银、出餐和闭店整理班次",
+    }).state;
+    state = advanceInterview(state, {
+      peopleInvolved: "店长、值班店长和兼职伙伴",
+    }).state;
+    state = advanceInterview(state, {
+      currentWorkaround: "店长当天临时调班并压缩交接时间",
+    }).state;
+    const completion = advanceInterview(state, {
+      operationalImpact: "高峰准备动作总被打乱，现场只能不断救火",
+    });
+
+    const record = buildDiagnosisRecord(completion.state);
+
+    expect(record).toMatchObject({
+      painType: "schedule-instability",
+      severity: "medium",
+      likelyRootCause: expect.stringContaining("最后一刻频繁改动"),
+      nextAction: expect.stringContaining("临时改动"),
+    });
+  });
+
   it("uses service-experience wording for store service complaint interviews", () => {
     const initial = createInterviewState("store-service-complaints" as never);
 

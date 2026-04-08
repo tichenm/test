@@ -49,6 +49,16 @@ class SmokeLocalFlowScenarioTests(unittest.TestCase):
         self.assertEqual(scenario["expectedPainType"], "service-delay")
         self.assertEqual(scenario["answers"][0], "等待太久")
 
+    def test_supports_store_staffing_scheduling_scenario(self) -> None:
+        scenario = get_smoke_scenario("store-staffing-scheduling")
+
+        self.assertEqual(scenario["railKey"], "store-staffing-scheduling")
+        self.assertEqual(scenario["label"], "门店排班与人手配置")
+        self.assertEqual(scenario["storeName"], "南京西路店")
+        self.assertEqual(scenario["roleName"], "门店店长")
+        self.assertEqual(scenario["expectedPainType"], "schedule-instability")
+        self.assertEqual(scenario["answers"][0], "排班总变")
+
     def test_builds_post_run_markers_for_history_and_insights_checks(self) -> None:
         scenario = get_smoke_scenario("store-service-complaints")
 

@@ -2,6 +2,9 @@ export const DIAGNOSIS_PAIN_TYPES = [
   "stockout",
   "overstock",
   "inventory-accuracy",
+  "staffing-gap",
+  "schedule-instability",
+  "shift-handoff-gap",
   "service-delay",
   "service-inconsistency",
   "handoff-delay",
@@ -23,6 +26,18 @@ const PAIN_TYPE_ALIASES: Record<string, PainType> = {
   "inventory-accuracy": "inventory-accuracy",
   "库存准确性偏差": "inventory-accuracy",
   "库存不准": "inventory-accuracy",
+  "staffing-gap": "staffing-gap",
+  "人手不够": "staffing-gap",
+  "人手缺口": "staffing-gap",
+  "班次扛不住": "staffing-gap",
+  "schedule-instability": "schedule-instability",
+  "排班总变": "schedule-instability",
+  "排班波动": "schedule-instability",
+  "临时改班": "schedule-instability",
+  "shift-handoff-gap": "shift-handoff-gap",
+  "交接接不上": "shift-handoff-gap",
+  "交接脱节": "shift-handoff-gap",
+  "班次交接脱节": "shift-handoff-gap",
   "service-delay": "service-delay",
   "等待太久": "service-delay",
   "等待过长": "service-delay",
@@ -54,6 +69,12 @@ export function getDiagnosisPainTypeLabel(painType: string) {
       return "积压";
     case "inventory-accuracy":
       return "库存准确性偏差";
+    case "staffing-gap":
+      return "人手缺口";
+    case "schedule-instability":
+      return "排班波动";
+    case "shift-handoff-gap":
+      return "交接脱节";
     case "service-delay":
       return "等待过长";
     case "service-inconsistency":
