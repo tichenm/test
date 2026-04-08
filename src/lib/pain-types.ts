@@ -5,6 +5,9 @@ export const DIAGNOSIS_PAIN_TYPES = [
   "staffing-gap",
   "schedule-instability",
   "shift-handoff-gap",
+  "repair-delay",
+  "recurring-breakdown",
+  "vendor-response-gap",
   "service-delay",
   "service-inconsistency",
   "handoff-delay",
@@ -38,6 +41,18 @@ const PAIN_TYPE_ALIASES: Record<string, PainType> = {
   "交接接不上": "shift-handoff-gap",
   "交接脱节": "shift-handoff-gap",
   "班次交接脱节": "shift-handoff-gap",
+  "repair-delay": "repair-delay",
+  "维修太慢": "repair-delay",
+  "维修迟迟没好": "repair-delay",
+  "设备修复太慢": "repair-delay",
+  "recurring-breakdown": "recurring-breakdown",
+  "反复坏": "recurring-breakdown",
+  "反复故障": "recurring-breakdown",
+  "总是重复坏": "recurring-breakdown",
+  "vendor-response-gap": "vendor-response-gap",
+  "报修没人接": "vendor-response-gap",
+  "维修商没响应": "vendor-response-gap",
+  "报修升级没人跟": "vendor-response-gap",
   "service-delay": "service-delay",
   "等待太久": "service-delay",
   "等待过长": "service-delay",
@@ -75,6 +90,12 @@ export function getDiagnosisPainTypeLabel(painType: string) {
       return "排班波动";
     case "shift-handoff-gap":
       return "交接脱节";
+    case "repair-delay":
+      return "维修太慢";
+    case "recurring-breakdown":
+      return "反复故障";
+    case "vendor-response-gap":
+      return "报修没人接";
     case "service-delay":
       return "等待过长";
     case "service-inconsistency":

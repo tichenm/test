@@ -175,6 +175,29 @@ describe("interview services", () => {
     );
   });
 
+  it("creates a store equipment session for maintenance and repair-response breakdowns", async () => {
+    prismaMock.interviewSession.create.mockResolvedValue({ id: "session-store-equipment" });
+
+    await createInterviewSessionForUser("user-1", "store-equipment-maintenance" as never);
+
+    expect(generateGuidedQuestionMock).toHaveBeenCalledWith(
+      expect.stringContaining("设备问题最常卡在哪一类"),
+      expect.objectContaining({
+        railKey: "store-equipment-maintenance",
+      }),
+    );
+    expect(prismaMock.interviewSession.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          railKey: "store-equipment-maintenance",
+          state: expect.objectContaining({
+            railKey: "store-equipment-maintenance",
+          }),
+        }),
+      }),
+    );
+  });
+
   it("creates a project rollout handoff session for cross-team launch coordination", async () => {
     prismaMock.interviewSession.create.mockResolvedValue({ id: "session-project-rollout" });
 

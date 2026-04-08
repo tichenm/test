@@ -42,6 +42,9 @@ describe("interview presenters", () => {
     expect(getInterviewRailLabel("store-staffing-scheduling")).toBe(
       "门店排班与人手配置",
     );
+    expect(getInterviewRailLabel("store-equipment-maintenance")).toBe(
+      "门店设备故障与维修响应",
+    );
     expect(getInterviewRailLabel("store-service-complaints")).toBe(
       "门店服务体验与客诉",
     );
@@ -84,5 +87,8 @@ describe("interview presenters", () => {
     expect(getDiagnosisPainTypeLabel("staffing-gap")).toBe("人手缺口");
     expect(getDiagnosisPainTypeLabel("schedule-instability")).toBe("排班波动");
     expect(getDiagnosisPainTypeLabel("shift-handoff-gap")).toBe("交接脱节");
+    expect(getDiagnosisPainTypeLabel("repair-delay")).toBe("维修太慢");
+    expect(getDiagnosisPainTypeLabel("recurring-breakdown")).toBe("反复故障");
+    expect(getDiagnosisPainTypeLabel("vendor-response-gap")).toBe("报修没人接");
   });
 });

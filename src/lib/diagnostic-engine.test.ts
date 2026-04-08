@@ -273,6 +273,19 @@ describe("diagnostic engine", () => {
     );
   });
 
+  it("uses equipment wording for store equipment interviews", () => {
+    const initial = createInterviewState("store-equipment-maintenance" as never);
+
+    const afterSymptom = advanceInterview(initial, {
+      painType: "repair-delay" as never,
+    }).state;
+
+    expect(afterSymptom.currentStep).toBe("frequency-pattern");
+    expect(getCurrentStepDefinition(afterSymptom).prompt(afterSymptom)).toContain(
+      "维修迟迟没有恢复",
+    );
+  });
+
   it("builds staffing diagnosis copy for unstable schedule coverage", () => {
     let state = createInterviewState("store-staffing-scheduling" as never);
 
@@ -299,6 +312,35 @@ describe("diagnostic engine", () => {
       severity: "medium",
       likelyRootCause: expect.stringContaining("最后一刻频繁改动"),
       nextAction: expect.stringContaining("临时改动"),
+    });
+  });
+
+  it("builds equipment diagnosis copy for vendor response gaps", () => {
+    let state = createInterviewState("store-equipment-maintenance" as never);
+
+    state = advanceInterview(state, { painType: "vendor-response-gap" as never }).state;
+    state = advanceInterview(state, { frequency: "这一个月每周都要追一次" }).state;
+    state = advanceInterview(state, { timeWindow: "周末高峰前和闭店前" }).state;
+    state = advanceInterview(state, {
+      affectedScope: "制冰机、冷柜和后厨洗消设备",
+    }).state;
+    state = advanceInterview(state, {
+      peopleInvolved: "店长、值班店长、工程和外部维修商",
+    }).state;
+    state = advanceInterview(state, {
+      currentWorkaround: "店长反复催单并临时调整作业顺序顶住现场",
+    }).state;
+    const completion = advanceInterview(state, {
+      operationalImpact: "高峰准备被打断，门店只能边营业边救火",
+    });
+
+    const record = buildDiagnosisRecord(completion.state);
+
+    expect(record).toMatchObject({
+      painType: "vendor-response-gap",
+      severity: "medium",
+      likelyRootCause: expect.stringContaining("报修升级"),
+      nextAction: expect.stringContaining("升级负责人"),
     });
   });
 

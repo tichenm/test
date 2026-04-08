@@ -6,6 +6,7 @@ export type RailKey =
   | "store-stock-replenishment"
   | "store-inventory-control"
   | "store-staffing-scheduling"
+  | "store-equipment-maintenance"
   | "store-service-complaints"
   | "project-rollout-handoff"
   | "warehouse-receiving";
@@ -106,6 +107,12 @@ const staffingSymptomChoices = [
   { label: "人手不够", value: "staffing-gap" },
   { label: "排班总变", value: "schedule-instability" },
   { label: "交接接不上", value: "shift-handoff-gap" },
+] as const;
+
+const equipmentSymptomChoices = [
+  { label: "维修太慢", value: "repair-delay" },
+  { label: "反复坏", value: "recurring-breakdown" },
+  { label: "报修没人接", value: "vendor-response-gap" },
 ] as const;
 
 const projectSymptomChoices = [
@@ -597,6 +604,120 @@ const storeStaffingSchedulingRail: DiagnosticRail = {
   },
 };
 
+const storeEquipmentMaintenanceRail: DiagnosticRail = {
+  key: "store-equipment-maintenance",
+  label: "门店设备故障与维修响应",
+  workbenchSummary:
+    "把门店设备报修、维修拖延和反复故障收敛成清晰诊断，并给店长一个能立刻推进的维修响应动作。",
+  interviewContextLabel: "门店设备故障与维修响应",
+  stepOrder: sharedStepOrder,
+  steps: {
+    "problem-symptom": {
+      key: "problem-symptom",
+      field: "painType",
+      suggestedAnswers: equipmentSymptomChoices,
+      prompt: () =>
+        "设备问题最常卡在哪一类，维修太慢、反复坏，还是报修没人接？",
+    },
+    "frequency-pattern": {
+      key: "frequency-pattern",
+      field: "frequency",
+      prompt: (state) => {
+        switch (state.fields.painType) {
+          case "repair-delay":
+            return "设备坏了以后，维修迟迟没有恢复、影响营业的情况，通常多久会出现一次？";
+          case "recurring-breakdown":
+            return "同一设备修完没多久又坏、需要反复处理的情况，通常多久会出现一次？";
+          case "vendor-response-gap":
+            return "设备报修后没人接单、升级后还是没有明确回应的情况，通常多久会出现一次？";
+          default:
+            return "这个设备维修问题通常多久出现一次？";
+        }
+      },
+    },
+    "time-window": {
+      key: "time-window",
+      field: "timeWindow",
+      prompt: () =>
+        "这个问题最常在什么时候出现，开店准备、高峰营业、闭店清洁，还是促销档期前？",
+    },
+    "affected-scope": {
+      key: "affected-scope",
+      field: "affectedScope",
+      prompt: () =>
+        "最常受影响的是哪些设备、门店区域、作业环节，或必须按时完成的营业动作？",
+    },
+    "people-involved": {
+      key: "people-involved",
+      field: "peopleInvolved",
+      prompt: () =>
+        "这个问题出现时，通常会牵涉哪些人，店长、值班店长、工程、外部维修商，还是区域支持？",
+    },
+    "current-workaround": {
+      key: "current-workaround",
+      field: "currentWorkaround",
+      prompt: () =>
+        "团队现在通常怎么临时顶住现场，是换设备、改作业顺序、手工补位，还是反复催修？",
+    },
+    "operational-impact": {
+      key: "operational-impact",
+      field: "operationalImpact",
+      prompt: () =>
+        "这个问题会给营业节奏、顾客体验、食品安全，或员工负荷带来什么影响？",
+    },
+  },
+  buildDiagnosis: (fields) => {
+    if (fields.painType === "repair-delay") {
+      return {
+        painType: fields.painType,
+        severity: "high",
+        frequency: fields.frequency,
+        timeWindow: fields.timeWindow,
+        affectedScope: fields.affectedScope,
+        peopleInvolved: fields.peopleInvolved,
+        currentWorkaround: fields.currentWorkaround,
+        operationalImpact: fields.operationalImpact,
+        likelyRootCause:
+          "报修到恢复之间缺少一个稳定的维修响应机制，所以设备一旦故障，门店只能靠临时补位硬扛营业影响。",
+        nextAction:
+          "先复盘最近两次最伤营业的设备故障，把报修时间、响应时间和恢复时间串起来，找出卡住最久的维修环节。",
+      };
+    }
+
+    if (fields.painType === "recurring-breakdown") {
+      return {
+        painType: fields.painType,
+        severity: "medium",
+        frequency: fields.frequency,
+        timeWindow: fields.timeWindow,
+        affectedScope: fields.affectedScope,
+        peopleInvolved: fields.peopleInvolved,
+        currentWorkaround: fields.currentWorkaround,
+        operationalImpact: fields.operationalImpact,
+        likelyRootCause:
+          "同一台设备被当成一次次孤立故障处理，说明根因没有被真正消掉，维修动作只是在重复恢复表面运行。",
+        nextAction:
+          "挑一台最近反复报修的设备，把过去三次故障记录、维修内容和恢复后时长放在一起，看是不是一直在修同一个根因。",
+      };
+    }
+
+    return {
+      painType: fields.painType,
+      severity: "medium",
+      frequency: fields.frequency,
+      timeWindow: fields.timeWindow,
+      affectedScope: fields.affectedScope,
+      peopleInvolved: fields.peopleInvolved,
+      currentWorkaround: fields.currentWorkaround,
+      operationalImpact: fields.operationalImpact,
+      likelyRootCause:
+        "设备报修升级没有一个明确 owner 和响应视图，所以门店一直在追单，但外部维修响应并没有真正被压实。",
+      nextAction:
+        "先为最常超时的设备故障指定一个升级负责人，并给维修商约定一个可追踪的响应检查点，别再让报修停留在口头催促。",
+    };
+  },
+};
+
 const storeServiceComplaintsRail: DiagnosticRail = {
   key: "store-service-complaints",
   label: "门店服务体验与客诉",
@@ -895,6 +1016,7 @@ const diagnosticRails: Record<RailKey, DiagnosticRail> = {
   "store-stock-replenishment": storeStockReplenishmentRail,
   "store-inventory-control": storeInventoryControlRail,
   "store-staffing-scheduling": storeStaffingSchedulingRail,
+  "store-equipment-maintenance": storeEquipmentMaintenanceRail,
   "store-service-complaints": storeServiceComplaintsRail,
   "project-rollout-handoff": projectRolloutHandoffRail,
   "warehouse-receiving": warehouseReceivingRail,
