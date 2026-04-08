@@ -9,6 +9,7 @@ export type RailKey =
   | "store-equipment-maintenance"
   | "store-shrinkage-waste"
   | "store-promo-execution"
+  | "store-training-onboarding"
   | "store-service-complaints"
   | "project-rollout-handoff"
   | "warehouse-receiving";
@@ -127,6 +128,12 @@ const promoSymptomChoices = [
   { label: "活动落地太慢", value: "promo-launch-delay" },
   { label: "陈列没到位", value: "display-breakdown" },
   { label: "价签口径不一致", value: "signage-mismatch" },
+] as const;
+
+const trainingSymptomChoices = [
+  { label: "上手太慢", value: "onboarding-ramp-delay" },
+  { label: "标准动作不一致", value: "sop-mismatch" },
+  { label: "带教没人盯", value: "trainer-coverage-gap" },
 ] as const;
 
 const projectSymptomChoices = [
@@ -960,6 +967,120 @@ const storePromoExecutionRail: DiagnosticRail = {
   },
 };
 
+const storeTrainingOnboardingRail: DiagnosticRail = {
+  key: "store-training-onboarding",
+  label: "门店培训与新人带教",
+  workbenchSummary:
+    "把新人上手慢、标准动作不一致和带教覆盖断点收敛成清晰诊断，并给店长一个可执行的带教优化动作。",
+  interviewContextLabel: "门店培训与新人带教",
+  stepOrder: sharedStepOrder,
+  steps: {
+    "problem-symptom": {
+      key: "problem-symptom",
+      field: "painType",
+      suggestedAnswers: trainingSymptomChoices,
+      prompt: () =>
+        "培训最常卡在哪一类，上手太慢、标准动作不一致，还是带教没人盯？",
+    },
+    "frequency-pattern": {
+      key: "frequency-pattern",
+      field: "frequency",
+      prompt: (state) => {
+        switch (state.fields.painType) {
+          case "onboarding-ramp-delay":
+            return "新人上手明显偏慢、迟迟独立不了岗位的情况，通常多久会出现一次？";
+          case "sop-mismatch":
+            return "同一动作不同人教法不一致、执行标准来回变化的情况，通常多久会出现一次？";
+          case "trainer-coverage-gap":
+            return "带教排上了但没人持续跟进、关键动作无人盯的情况，通常多久会出现一次？";
+          default:
+            return "这个培训与带教问题通常多久出现一次？";
+        }
+      },
+    },
+    "time-window": {
+      key: "time-window",
+      field: "timeWindow",
+      prompt: () =>
+        "这个问题最常在什么时候出现，新人入职前两周、交接班前后、晚高峰，还是活动档期？",
+    },
+    "affected-scope": {
+      key: "affected-scope",
+      field: "affectedScope",
+      prompt: () =>
+        "最常受影响的是哪些岗位动作、SOP 环节、班次任务，或必须按标准完成的关键流程？",
+    },
+    "people-involved": {
+      key: "people-involved",
+      field: "peopleInvolved",
+      prompt: () =>
+        "这个问题出现时，通常会牵涉哪些人，店长、值班店长、带教伙伴、新人，还是区域培训支持？",
+    },
+    "current-workaround": {
+      key: "current-workaround",
+      field: "currentWorkaround",
+      prompt: () =>
+        "团队现在通常怎么临时补位，是抽老员工顶带教、现场纠偏，还是压缩培训步骤先过班次？",
+    },
+    "operational-impact": {
+      key: "operational-impact",
+      field: "operationalImpact",
+      prompt: () =>
+        "这个问题会给现场执行质量、员工负荷、顾客体验，或班次稳定性带来什么影响？",
+    },
+  },
+  buildDiagnosis: (fields) => {
+    if (fields.painType === "onboarding-ramp-delay") {
+      return {
+        painType: fields.painType,
+        severity: "high",
+        frequency: fields.frequency,
+        timeWindow: fields.timeWindow,
+        affectedScope: fields.affectedScope,
+        peopleInvolved: fields.peopleInvolved,
+        currentWorkaround: fields.currentWorkaround,
+        operationalImpact: fields.operationalImpact,
+        likelyRootCause:
+          "新人培养路径缺少可追踪的里程碑，导致关键岗位能力靠临场救火补齐，上手速度持续拉长。",
+        nextAction:
+          "先把一个高频岗位拆成首周带教清单，明确每天要达成的动作标准和复盘责任人，再按班次跟进。",
+      };
+    }
+
+    if (fields.painType === "sop-mismatch") {
+      return {
+        painType: fields.painType,
+        severity: "medium",
+        frequency: fields.frequency,
+        timeWindow: fields.timeWindow,
+        affectedScope: fields.affectedScope,
+        peopleInvolved: fields.peopleInvolved,
+        currentWorkaround: fields.currentWorkaround,
+        operationalImpact: fields.operationalImpact,
+        likelyRootCause:
+          "门店培训没有沉淀统一示范动作和验收标准，导致同一 SOP 在不同班次被教成了不同版本。",
+        nextAction:
+          "先挑一个最容易返工的 SOP，统一示范动作与验收口径，并在下一次交接班前做一次现场抽查。",
+      };
+    }
+
+    return {
+      painType: fields.painType,
+      severity: "medium",
+      frequency: fields.frequency,
+      timeWindow: fields.timeWindow,
+      affectedScope: fields.affectedScope,
+      peopleInvolved: fields.peopleInvolved,
+      currentWorkaround: fields.currentWorkaround,
+      operationalImpact: fields.operationalImpact,
+      likelyRootCause:
+        "带教责任和跟进机制没有被固定下来，导致培训安排停留在排班表上，关键动作长期缺少持续追踪。",
+      nextAction:
+        "先为当前班次指定带教负责人，锁定每日检查点和升级规则，确保带教动作有人跟到闭环。",
+    };
+  },
+};
+
 const storeServiceComplaintsRail: DiagnosticRail = {
   key: "store-service-complaints",
   label: "门店服务体验与客诉",
@@ -1261,6 +1382,7 @@ const diagnosticRails: Record<RailKey, DiagnosticRail> = {
   "store-equipment-maintenance": storeEquipmentMaintenanceRail,
   "store-shrinkage-waste": storeShrinkageWasteRail,
   "store-promo-execution": storePromoExecutionRail,
+  "store-training-onboarding": storeTrainingOnboardingRail,
   "store-service-complaints": storeServiceComplaintsRail,
   "project-rollout-handoff": projectRolloutHandoffRail,
   "warehouse-receiving": warehouseReceivingRail,

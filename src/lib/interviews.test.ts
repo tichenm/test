@@ -244,6 +244,29 @@ describe("interview services", () => {
     );
   });
 
+  it("creates a store training session for onboarding and coaching breakdowns", async () => {
+    prismaMock.interviewSession.create.mockResolvedValue({ id: "session-store-training" });
+
+    await createInterviewSessionForUser("user-1", "store-training-onboarding" as never);
+
+    expect(generateGuidedQuestionMock).toHaveBeenCalledWith(
+      expect.stringContaining("培训最常卡在哪一类"),
+      expect.objectContaining({
+        railKey: "store-training-onboarding",
+      }),
+    );
+    expect(prismaMock.interviewSession.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          railKey: "store-training-onboarding",
+          state: expect.objectContaining({
+            railKey: "store-training-onboarding",
+          }),
+        }),
+      }),
+    );
+  });
+
   it("creates a project rollout handoff session for cross-team launch coordination", async () => {
     prismaMock.interviewSession.create.mockResolvedValue({ id: "session-project-rollout" });
 

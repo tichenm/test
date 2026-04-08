@@ -14,6 +14,9 @@ export const DIAGNOSIS_PAIN_TYPES = [
   "promo-launch-delay",
   "display-breakdown",
   "signage-mismatch",
+  "onboarding-ramp-delay",
+  "sop-mismatch",
+  "trainer-coverage-gap",
   "service-delay",
   "service-inconsistency",
   "handoff-delay",
@@ -83,6 +86,18 @@ const PAIN_TYPE_ALIASES: Record<string, PainType> = {
   "价签口径不一致": "signage-mismatch",
   "价签和收银不一致": "signage-mismatch",
   "活动价签不一致": "signage-mismatch",
+  "onboarding-ramp-delay": "onboarding-ramp-delay",
+  "上手太慢": "onboarding-ramp-delay",
+  "上手偏慢": "onboarding-ramp-delay",
+  "新人上手太慢": "onboarding-ramp-delay",
+  "sop-mismatch": "sop-mismatch",
+  "标准动作不一致": "sop-mismatch",
+  "sop不一致": "sop-mismatch",
+  "动作标准不一致": "sop-mismatch",
+  "trainer-coverage-gap": "trainer-coverage-gap",
+  "带教没人盯": "trainer-coverage-gap",
+  "带教覆盖断档": "trainer-coverage-gap",
+  "带教跟进断档": "trainer-coverage-gap",
   "service-delay": "service-delay",
   "等待太久": "service-delay",
   "等待过长": "service-delay",
@@ -138,6 +153,12 @@ export function getDiagnosisPainTypeLabel(painType: string) {
       return "陈列没到位";
     case "signage-mismatch":
       return "价签口径不一致";
+    case "onboarding-ramp-delay":
+      return "上手太慢";
+    case "sop-mismatch":
+      return "标准动作不一致";
+    case "trainer-coverage-gap":
+      return "带教没人盯";
     case "service-delay":
       return "等待过长";
     case "service-inconsistency":

@@ -312,6 +312,19 @@ describe("diagnostic engine", () => {
     );
   });
 
+  it("uses training wording for store onboarding interviews", () => {
+    const initial = createInterviewState("store-training-onboarding" as never);
+
+    const afterSymptom = advanceInterview(initial, {
+      painType: "onboarding-ramp-delay" as never,
+    }).state;
+
+    expect(afterSymptom.currentStep).toBe("frequency-pattern");
+    expect(getCurrentStepDefinition(afterSymptom).prompt(afterSymptom)).toContain(
+      "新人上手明显偏慢",
+    );
+  });
+
   it("builds staffing diagnosis copy for unstable schedule coverage", () => {
     let state = createInterviewState("store-staffing-scheduling" as never);
 
@@ -425,6 +438,35 @@ describe("diagnostic engine", () => {
       severity: "medium",
       likelyRootCause: expect.stringContaining("统一口径"),
       nextAction: expect.stringContaining("价签负责人"),
+    });
+  });
+
+  it("builds training diagnosis copy for trainer coverage gaps", () => {
+    let state = createInterviewState("store-training-onboarding" as never);
+
+    state = advanceInterview(state, { painType: "trainer-coverage-gap" as never }).state;
+    state = advanceInterview(state, { frequency: "每周都会出现一两次" }).state;
+    state = advanceInterview(state, { timeWindow: "新人入职前两周和晚高峰前" }).state;
+    state = advanceInterview(state, {
+      affectedScope: "收银、出餐和闭店交接动作",
+    }).state;
+    state = advanceInterview(state, {
+      peopleInvolved: "店长、值班店长、带教伙伴和新人",
+    }).state;
+    state = advanceInterview(state, {
+      currentWorkaround: "值班店长临时抽人补带教并现场纠偏",
+    }).state;
+    const completion = advanceInterview(state, {
+      operationalImpact: "现场标准动作反复返工，老员工负荷持续升高",
+    });
+
+    const record = buildDiagnosisRecord(completion.state);
+
+    expect(record).toMatchObject({
+      painType: "trainer-coverage-gap",
+      severity: "medium",
+      likelyRootCause: expect.stringContaining("带教责任"),
+      nextAction: expect.stringContaining("带教负责人"),
     });
   });
 

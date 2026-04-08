@@ -141,6 +141,21 @@ SMOKE_SCENARIOS = {
             "活动首日转化下滑，现场只能边卖边纠错",
         ],
     },
+    "store-training-onboarding": {
+        "label": "门店培训与新人带教",
+        "storeName": "南京东路店",
+        "roleName": "门店店长",
+        "expectedPainType": "onboarding-ramp-delay",
+        "answers": [
+            "上手太慢",
+            "每周都会出现一两次",
+            "新人入职前两周和晚高峰前",
+            "收银、出餐和闭店交接动作",
+            "店长、值班店长、带教伙伴和新人",
+            "值班店长临时抽人补带教并现场纠偏",
+            "现场标准动作反复返工，老员工负荷持续升高",
+        ],
+    },
 }
 
 

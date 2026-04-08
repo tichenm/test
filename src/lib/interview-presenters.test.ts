@@ -51,6 +51,9 @@ describe("interview presenters", () => {
     expect(getInterviewRailLabel("store-promo-execution")).toBe(
       "门店促销执行与活动落地",
     );
+    expect(getInterviewRailLabel("store-training-onboarding")).toBe(
+      "门店培训与新人带教",
+    );
     expect(getInterviewRailLabel("store-service-complaints")).toBe(
       "门店服务体验与客诉",
     );
@@ -102,5 +105,8 @@ describe("interview presenters", () => {
     expect(getDiagnosisPainTypeLabel("promo-launch-delay")).toBe("活动落地太慢");
     expect(getDiagnosisPainTypeLabel("display-breakdown")).toBe("陈列没到位");
     expect(getDiagnosisPainTypeLabel("signage-mismatch")).toBe("价签口径不一致");
+    expect(getDiagnosisPainTypeLabel("onboarding-ramp-delay")).toBe("上手太慢");
+    expect(getDiagnosisPainTypeLabel("sop-mismatch")).toBe("标准动作不一致");
+    expect(getDiagnosisPainTypeLabel("trainer-coverage-gap")).toBe("带教没人盯");
   });
 });

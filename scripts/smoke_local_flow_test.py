@@ -89,6 +89,16 @@ class SmokeLocalFlowScenarioTests(unittest.TestCase):
         self.assertEqual(scenario["expectedPainType"], "promo-launch-delay")
         self.assertEqual(scenario["answers"][0], "活动落地太慢")
 
+    def test_supports_store_training_onboarding_scenario(self) -> None:
+        scenario = get_smoke_scenario("store-training-onboarding")
+
+        self.assertEqual(scenario["railKey"], "store-training-onboarding")
+        self.assertEqual(scenario["label"], "门店培训与新人带教")
+        self.assertEqual(scenario["storeName"], "南京东路店")
+        self.assertEqual(scenario["roleName"], "门店店长")
+        self.assertEqual(scenario["expectedPainType"], "onboarding-ramp-delay")
+        self.assertEqual(scenario["answers"][0], "上手太慢")
+
     def test_builds_post_run_markers_for_history_and_insights_checks(self) -> None:
         scenario = get_smoke_scenario("store-service-complaints")
 

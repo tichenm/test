@@ -20,6 +20,7 @@ describe("RailPicker", () => {
     expect(screen.getByText("门店设备故障与维修响应")).toBeInTheDocument();
     expect(screen.getByText("门店损耗与报废")).toBeInTheDocument();
     expect(screen.getByText("门店促销执行与活动落地")).toBeInTheDocument();
+    expect(screen.getByText("门店培训与新人带教")).toBeInTheDocument();
     expect(screen.getByText("门店服务体验与客诉")).toBeInTheDocument();
     expect(screen.getByText("项目落地与交接")).toBeInTheDocument();
     expect(screen.getByText("仓库收货")).toBeInTheDocument();
@@ -50,6 +51,9 @@ describe("RailPicker", () => {
     const promoButton = screen.getByRole("button", {
       name: "开始门店促销执行与活动落地诊断",
     });
+    const trainingButton = screen.getByRole("button", {
+      name: "开始门店培训与新人带教诊断",
+    });
     const serviceButton = screen.getByRole("button", {
       name: "开始门店服务体验与客诉诊断",
     });
@@ -71,6 +75,8 @@ describe("RailPicker", () => {
     expect(shrinkageButton).toHaveAttribute("value", "store-shrinkage-waste");
     expect(promoButton).toHaveAttribute("name", "railKey");
     expect(promoButton).toHaveAttribute("value", "store-promo-execution");
+    expect(trainingButton).toHaveAttribute("name", "railKey");
+    expect(trainingButton).toHaveAttribute("value", "store-training-onboarding");
     expect(serviceButton).toHaveAttribute("name", "railKey");
     expect(serviceButton).toHaveAttribute("value", "store-service-complaints");
     expect(projectButton).toHaveAttribute("name", "railKey");
