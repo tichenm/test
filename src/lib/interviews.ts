@@ -11,6 +11,7 @@ import {
   type InterviewState,
 } from "@/lib/diagnostic-engine";
 import { prisma } from "@/lib/db";
+import { normalizePainTypeInput } from "@/lib/pain-types";
 
 function normalizeState(value: Prisma.JsonValue): InterviewState {
   if (typeof value === "object" && value && "currentStep" in value) {
@@ -125,8 +126,11 @@ export async function submitInterviewAnswer(params: {
 
   const currentState = normalizeState(session.state);
   const currentStep = getCurrentStepDefinition(currentState);
+  const normalizedAnswer = currentStep.field === "painType"
+    ? normalizePainTypeInput(params.answer)
+    : params.answer.trim();
   const next = advanceInterview(currentState, {
-    [currentStep.field]: params.answer.trim(),
+    [currentStep.field]: normalizedAnswer,
   });
 
   await prisma.interviewMessage.create({
@@ -134,7 +138,7 @@ export async function submitInterviewAnswer(params: {
       sessionId: session.id,
       role: MessageRole.USER,
       stepKey: currentState.currentStep,
-      content: params.answer.trim(),
+      content: normalizedAnswer,
     },
   });
 

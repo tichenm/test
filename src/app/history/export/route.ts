@@ -1,4 +1,4 @@
-import { buildLoginRedirect } from "@/lib/auth-navigation";
+import { buildLoginRedirect, resolveRequestOrigin } from "@/lib/auth-navigation";
 import {
   buildHistoryExportCsv,
   buildHistoryExportFilename,
@@ -13,7 +13,10 @@ export async function GET(request: Request) {
 
   if (!session?.user?.id) {
     return Response.redirect(
-      new URL(buildLoginRedirect(`${url.pathname}${url.search}`), request.url),
+      new URL(
+        buildLoginRedirect(`${url.pathname}${url.search}`),
+        resolveRequestOrigin(request),
+      ),
     );
   }
 

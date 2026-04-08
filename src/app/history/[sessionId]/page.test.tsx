@@ -6,6 +6,7 @@ const buildLoginRedirectMock = vi.fn();
 const buildDiagnosisHandoffBriefMock = vi.fn();
 const getInterviewRailLabelMock = vi.fn();
 const getDiagnosisReviewStatusLabelMock = vi.fn();
+const getDiagnosisSeverityLabelMock = vi.fn();
 const getInterviewSessionForUserMock = vi.fn();
 const updateDiagnosisFollowUpForUserMock = vi.fn();
 const redirectMock = vi.fn();
@@ -26,6 +27,7 @@ vi.mock("@/lib/diagnosis-handoff", () => ({
 vi.mock("@/lib/interview-presenters", () => ({
   getInterviewRailLabel: (...args: unknown[]) => getInterviewRailLabelMock(...args),
   getDiagnosisReviewStatusLabel: (...args: unknown[]) => getDiagnosisReviewStatusLabelMock(...args),
+  getDiagnosisSeverityLabel: (...args: unknown[]) => getDiagnosisSeverityLabelMock(...args),
 }));
 
 vi.mock("@/lib/interviews", () => ({
@@ -53,9 +55,12 @@ describe("DiagnosisDetailPage", () => {
     notFoundMock.mockReset();
 
     buildDiagnosisHandoffBriefMock.mockReturnValue("Handoff brief body");
-    getInterviewRailLabelMock.mockReturnValue("Store stock and replenishment");
+    getInterviewRailLabelMock.mockReturnValue("门店库存与补货");
     getDiagnosisReviewStatusLabelMock.mockImplementation((status: string) =>
-      status === "reviewing" ? "Reviewing" : "New",
+      status === "reviewing" ? "跟进中" : "待跟进",
+    );
+    getDiagnosisSeverityLabelMock.mockImplementation((severity: string) =>
+      severity === "high" ? "高" : "中",
     );
   });
 
@@ -127,22 +132,30 @@ describe("DiagnosisDetailPage", () => {
 
     render(await DiagnosisDetailPage({ params: Promise.resolve({ sessionId: "session-1" }) }));
 
-    expect(screen.getByText("What we think is happening")).toBeInTheDocument();
-    expect(screen.getByText("This looks mostly upstream")).toBeInTheDocument();
-    expect(screen.getByText("Why we think that")).toBeInTheDocument();
-    expect(screen.getByText("Pattern")).toBeInTheDocument();
-    expect(screen.getByText("Where it shows up")).toBeInTheDocument();
-    expect(screen.getByText("Workaround signal")).toBeInTheDocument();
-    expect(screen.getByText("What to do first")).toBeInTheDocument();
+    expect(screen.getByText("当前判断")).toBeInTheDocument();
+    expect(screen.getByText("更像是上游触发的问题")).toBeInTheDocument();
+    expect(screen.getByText("为什么这样判断")).toBeInTheDocument();
+    expect(screen.getByText("重复模式")).toBeInTheDocument();
+    expect(screen.getByText("发生位置")).toBeInTheDocument();
+    expect(screen.getByText("补救信号")).toBeInTheDocument();
+    expect(screen.getByText("优先做什么")).toBeInTheDocument();
     expect(
       screen.getByText(
         "Pull the last two weeks of affected SKUs and compare store sell-through with the replenishment or allocation signal being sent from HQ.",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText("What the team is doing now")).toBeInTheDocument();
-    expect(screen.getByText("Current owner: Area manager")).toBeInTheDocument();
+    expect(screen.getByText("团队当前状态")).toBeInTheDocument();
+    expect(screen.getByText("Area manager")).toBeInTheDocument();
     expect(
-      screen.getByText("Latest note: Comparing sell-through against allocation inputs."),
+      screen.getByDisplayValue("Comparing sell-through against allocation inputs."),
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "打开纯文本" })).toHaveAttribute(
+      "href",
+      "/history/session-1/brief",
+    );
+    expect(screen.getByRole("link", { name: "下载摘要" })).toHaveAttribute(
+      "href",
+      "/history/session-1/brief?download=1",
+    );
   });
 });

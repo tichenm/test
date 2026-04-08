@@ -1,4 +1,5 @@
 import {
+  getDiagnosisSeverityLabel,
   getInterviewRailLabel,
   getDiagnosisPainTypeLabel,
   getDiagnosisReviewStatusLabel,
@@ -30,11 +31,11 @@ type HandoffInterview = {
 };
 
 function formatTimestamp(value: Date) {
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
+  return new Intl.DateTimeFormat("zh-CN", {
     year: "numeric",
-    hour: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
   }).format(value);
 }
@@ -55,29 +56,29 @@ export function buildDiagnosisHandoffBrief(interview: HandoffInterview) {
   const diagnosis = interview.diagnosisRecord;
 
   return [
-    "Guided Pain Discovery Handoff",
+    "引导式痛点诊断交接摘要",
     "",
-    `Workflow: ${getInterviewRailLabel(interview.railKey)}`,
-    `Site: ${formatText(interview.storeName, "Not specified")}`,
-    `Role: ${formatText(interview.roleName, "Not specified")}`,
-    `Logged: ${formatTimestamp(interview.startedAt)}`,
+    `诊断流程：${getInterviewRailLabel(interview.railKey)}`,
+    `站点：${formatText(interview.storeName, "未填写")}`,
+    `角色：${formatText(interview.roleName, "未填写")}`,
+    `记录时间：${formatTimestamp(interview.startedAt)}`,
     "",
-    `Pain type: ${getDiagnosisPainTypeLabel(diagnosis.painType)}`,
-    `Severity: ${diagnosis.severity}`,
-    `Review status: ${getDiagnosisReviewStatusLabel(diagnosis.reviewStatus)}`,
-    `Owner: ${formatText(diagnosis.ownerName, "Unassigned")}`,
+    `痛点类型：${getDiagnosisPainTypeLabel(diagnosis.painType)}`,
+    `严重程度：${getDiagnosisSeverityLabel(diagnosis.severity)}`,
+    `跟进状态：${getDiagnosisReviewStatusLabel(diagnosis.reviewStatus)}`,
+    `负责人：${formatText(diagnosis.ownerName, "未指派")}`,
     "",
-    `Likely root cause: ${diagnosis.likelyRootCause}`,
-    `Frequency: ${diagnosis.frequency}`,
-    `Time window: ${diagnosis.timeWindow}`,
-    `Affected scope: ${diagnosis.affectedScope}`,
-    `People involved: ${diagnosis.peopleInvolved}`,
-    `Current workaround: ${diagnosis.currentWorkaround}`,
-    `Operational impact: ${diagnosis.operationalImpact}`,
-    `Next action: ${diagnosis.nextAction}`,
-    `Review note: ${formatText(diagnosis.reviewNote, "No follow-up note yet.")}`,
+    `可能根因：${diagnosis.likelyRootCause}`,
+    `出现频率：${diagnosis.frequency}`,
+    `高发时段：${diagnosis.timeWindow}`,
+    `影响范围：${diagnosis.affectedScope}`,
+    `涉及人员：${diagnosis.peopleInvolved}`,
+    `当前补救：${diagnosis.currentWorkaround}`,
+    `业务影响：${diagnosis.operationalImpact}`,
+    `建议动作：${diagnosis.nextAction}`,
+    `跟进备注：${formatText(diagnosis.reviewNote, "还没有跟进备注。")}`,
     "",
-    `Summary: ${diagnosis.aiSummary}`,
+    `总结：${diagnosis.aiSummary}`,
   ].join("\n");
 }
 

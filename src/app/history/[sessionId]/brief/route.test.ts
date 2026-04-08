@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const buildLoginRedirectMock = vi.fn();
+const resolveRequestOriginMock = vi.fn();
 const buildDiagnosisHandoffBriefMock = vi.fn();
 const buildDiagnosisHandoffFilenameMock = vi.fn();
 const getAuthSessionMock = vi.fn();
@@ -8,6 +9,7 @@ const getInterviewSessionForUserMock = vi.fn();
 
 vi.mock("@/lib/auth-navigation", () => ({
   buildLoginRedirect: (...args: unknown[]) => buildLoginRedirectMock(...args),
+  resolveRequestOrigin: (...args: unknown[]) => resolveRequestOriginMock(...args),
 }));
 
 vi.mock("@/lib/diagnosis-handoff", () => ({
@@ -28,6 +30,7 @@ import { GET } from "@/app/history/[sessionId]/brief/route";
 describe("diagnosis brief route", () => {
   beforeEach(() => {
     buildLoginRedirectMock.mockReset();
+    resolveRequestOriginMock.mockReset();
     buildDiagnosisHandoffBriefMock.mockReset();
     buildDiagnosisHandoffFilenameMock.mockReset();
     getAuthSessionMock.mockReset();
@@ -39,16 +42,22 @@ describe("diagnosis brief route", () => {
     buildLoginRedirectMock.mockReturnValue(
       "/login?callbackUrl=%2Fhistory%2Fsession-1%2Fbrief%3Fdownload%3D1&reason=auth",
     );
+    resolveRequestOriginMock.mockReturnValue("http://127.0.0.1:3000");
 
     const response = await GET(
-      new Request("http://localhost:3000/history/session-1/brief?download=1"),
+      new Request("http://localhost:3000/history/session-1/brief?download=1", {
+        headers: {
+          host: "127.0.0.1:3000",
+        },
+      }),
       { params: Promise.resolve({ sessionId: "session-1" }) },
     );
 
     expect(response.status).toBe(302);
     expect(buildLoginRedirectMock).toHaveBeenCalledWith("/history/session-1/brief?download=1");
+    expect(resolveRequestOriginMock).toHaveBeenCalled();
     expect(response.headers.get("location")).toBe(
-      "http://localhost:3000/login?callbackUrl=%2Fhistory%2Fsession-1%2Fbrief%3Fdownload%3D1&reason=auth",
+      "http://127.0.0.1:3000/login?callbackUrl=%2Fhistory%2Fsession-1%2Fbrief%3Fdownload%3D1&reason=auth",
     );
   });
 

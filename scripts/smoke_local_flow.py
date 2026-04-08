@@ -12,7 +12,7 @@ import tempfile
 import time
 import uuid
 from pathlib import Path
-from urllib import parse, request
+from urllib import error, parse, request
 
 from local_dev import load_dotenv
 
@@ -23,9 +23,10 @@ DEV_LOG_PATH = Path(".next/dev/logs/next-development.log")
 DEFAULT_RAIL_KEY = "inventory-replenishment"
 SMOKE_SCENARIOS = {
     "inventory-replenishment": {
-        "label": "Inventory and replenishment",
-        "storeName": "Store 12",
-        "roleName": "Store manager",
+        "label": "库存与补货",
+        "storeName": "12号店",
+        "roleName": "门店店长",
+        "expectedPainType": "stockout",
         "answers": [
             "stockout",
             "weekly",
@@ -37,9 +38,10 @@ SMOKE_SCENARIOS = {
         ],
     },
     "warehouse-receiving": {
-        "label": "Warehouse receiving",
-        "storeName": "North Hub",
-        "roleName": "Warehouse supervisor",
+        "label": "仓库收货",
+        "storeName": "华北仓",
+        "roleName": "仓库主管",
+        "expectedPainType": "overstock",
         "answers": [
             "overstock",
             "every morning receiving wave",
@@ -48,6 +50,21 @@ SMOKE_SCENARIOS = {
             "receiving clerks and forklift operators",
             "manual reprioritization and overflow staging",
             "putaway misses its slot and inbound stock blocks the next unload",
+        ],
+    },
+    "store-service-complaints": {
+        "label": "门店服务体验与客诉",
+        "storeName": "人民广场店",
+        "roleName": "门店店长",
+        "expectedPainType": "service-delay",
+        "answers": [
+            "等待太久",
+            "每个周末晚高峰",
+            "晚高峰和交接班前后",
+            "点单到出餐之间的顾客解释和排队安抚",
+            "收银、出餐伙伴和值班店长",
+            "店长临时顶到前场统一解释并安抚顾客",
+            "顾客等待更久，差评和投诉在高峰后集中出现",
         ],
     },
 }
@@ -66,6 +83,101 @@ def get_smoke_scenario(rail_key: str | None = None) -> dict[str, str | list[str]
         f"Unsupported SMOKE_RAIL_KEY: {selected_rail_key}",
     )
     return {"railKey": selected_rail_key, **scenario}
+
+
+def build_post_run_markers(
+    session_id: str,
+    scenario: dict[str, str | list[str]],
+) -> dict[str, list[str]]:
+    return {
+        "history": [
+            f"/history/{session_id}",
+            str(scenario["storeName"]),
+            str(scenario["roleName"]),
+        ],
+        "insights": [
+            f"/history/{session_id}",
+            str(scenario["label"]),
+        ],
+    }
+
+
+def build_persistence_expectations(
+    scenario: dict[str, str | list[str]],
+) -> dict[str, str]:
+    expected_pain_type = str(scenario["expectedPainType"])
+    return {
+        "userMessageContent": expected_pain_type,
+        "sessionPainType": expected_pain_type,
+    }
+
+
+def build_step_answer(
+    scenario: dict[str, str | list[str]],
+    step_index: int,
+    first_step_mode: str,
+) -> str:
+    answers = scenario["answers"]
+    require(isinstance(answers, list), "Smoke scenario answers must be a list")
+
+    if step_index == 1 and first_step_mode == "quick-choice":
+        return str(scenario["expectedPainType"])
+
+    return str(answers[step_index - 1])
+
+
+def extract_forms(page: str) -> list[str]:
+    return re.findall(r"<form\b.*?</form>", page, re.S)
+
+
+def extract_action_fields_from_form(form: str) -> list[tuple[str, str]]:
+    return [
+        (name, html.unescape(value))
+        for name, value in re.findall(
+            r'name="(\$ACTION_\d+:\d+)" value="([^"]*)"',
+            form,
+        )
+    ]
+
+
+def build_answer_submission_fields(
+    page: str,
+    answer: str,
+    first_step_mode: str,
+) -> list[tuple[str, str]]:
+    forms = extract_forms(page)
+    selected_form = None
+
+    if first_step_mode == "quick-choice":
+        answer_pattern = f'name="answer" value="{re.escape(answer)}"'
+        for form in forms:
+            if re.search(answer_pattern, form):
+                selected_form = form
+                break
+        if selected_form is None:
+            for form in forms:
+                if '<textarea' not in form and 'name="answer"' in form and '<button' in form:
+                    selected_form = form
+                    break
+    else:
+        for form in forms:
+            if 'textarea' in form and 'name="answer"' in form:
+                selected_form = form
+                break
+
+    require(selected_form is not None, f"Could not find the {first_step_mode} answer form")
+
+    action_fields = extract_action_fields_from_form(selected_form)
+    require(action_fields, f"Could not find action fields for the {first_step_mode} answer form")
+
+    action_prefix = action_fields[0][0].split(":")[0]
+    action_ref = action_prefix.replace("$ACTION_", "$ACTION_REF_")
+
+    return [
+        (action_ref, ""),
+        *action_fields,
+        ("answer", answer),
+    ]
 
 
 def find_psql() -> str:
@@ -188,9 +300,90 @@ def wait_for_magic_link(email: str, start_offset: int, timeout_seconds: int = 10
     raise SystemExit(f"Magic link for {email} was not written to {DEV_LOG_PATH}")
 
 
+def extract_optional(pattern: str, content: str) -> str | None:
+    match = re.search(pattern, content, re.S)
+    if not match:
+        return None
+    return match.group(1)
+
+
+def normalize_local_redirect(url: str) -> str:
+    parsed_base_url = parse.urlsplit(BASE_URL)
+    parsed_url = parse.urlsplit(parse.urljoin(BASE_URL, url))
+    if parsed_url.netloc in {"localhost:3000", "127.0.0.1:3000"}:
+        return parse.urlunsplit(
+            (
+                parsed_base_url.scheme,
+                parsed_base_url.netloc,
+                parsed_url.path,
+                parsed_url.query,
+                parsed_url.fragment,
+            )
+        )
+    return parse.urlunsplit(parsed_url)
+
+
+def login(opener: request.OpenerDirector) -> str:
+    login_page = get(opener, f"{BASE_URL}/login")
+    require("aria-label=\"登录表单\"" in login_page, "Login page did not render")
+
+    callback_path = extract_optional(
+        r'name="callbackPath" value="([^"]+)"',
+        login_page,
+    ) or "/"
+
+    if "/api/dev-login" in login_page:
+        try:
+            home_url, home_page = post_urlencoded(
+                opener,
+                f"{BASE_URL}/api/dev-login",
+                [
+                    ("email", SIGN_IN_EMAIL),
+                    ("callbackPath", html.unescape(callback_path)),
+                ],
+            )
+        except error.HTTPError as exc:
+            require(exc.code in {302, 303, 307, 308}, f"Direct dev login failed: HTTP {exc.code}")
+            location = exc.headers.get("Location")
+            require(location is not None, "Direct dev login redirect did not include a Location header")
+            home_url = normalize_local_redirect(location)
+            home_page = get(opener, home_url)
+        require(
+            "工作台" in home_page and "开始诊断" in home_page,
+            "Direct dev login did not reach the signed-in workbench",
+        )
+        require(
+            home_url.rstrip("/") == BASE_URL.rstrip("/"),
+            f"Direct dev login redirected to an unexpected location: {home_url}",
+        )
+        return home_page
+
+    csrf_payload = get(opener, f"{BASE_URL}/api/auth/csrf")
+    csrf_token = extract(r'"csrfToken":"([^"]+)"', csrf_payload, "csrf token")
+    log_offset = DEV_LOG_PATH.stat().st_size if DEV_LOG_PATH.exists() else 0
+
+    signin_url, signin_body = post_urlencoded(
+        opener,
+        f"{BASE_URL}/api/auth/signin/email",
+        [
+            ("csrfToken", csrf_token),
+            ("email", SIGN_IN_EMAIL),
+            ("callbackUrl", f"{BASE_URL}/"),
+            ("json", "true"),
+        ],
+    )
+    require(
+        "verify-request" in signin_url or "verify-request" in signin_body,
+        "Email sign-in did not reach verify-request page",
+    )
+
+    magic_link = wait_for_magic_link(SIGN_IN_EMAIL, log_offset)
+    return get(opener, magic_link)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run the local magic-link smoke flow against the Next.js dev server.",
+        description="Run the local smoke flow against the Next.js dev server.",
     )
     parser.add_argument(
         "--base-url",
@@ -207,6 +400,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         choices=sorted(SMOKE_SCENARIOS.keys()),
         help="Pick which rail scenario to run.",
+    )
+    parser.add_argument(
+        "--first-step-mode",
+        default="freeform",
+        choices=["freeform", "quick-choice"],
+        help="Choose whether the first symptom answer is submitted through the textarea flow or the quick-choice buttons.",
     )
     return parser
 
@@ -229,29 +428,8 @@ def main(argv: list[str] | None = None) -> None:
     jar = http.cookiejar.MozillaCookieJar(cookie_file.name)
     opener = request.build_opener(request.HTTPCookieProcessor(jar))
 
-    csrf_payload = get(opener, f"{BASE_URL}/api/auth/csrf")
-    csrf_token = extract(r'"csrfToken":"([^"]+)"', csrf_payload, "csrf token")
-
-    log_offset = DEV_LOG_PATH.stat().st_size if DEV_LOG_PATH.exists() else 0
-
-    signin_url, signin_body = post_urlencoded(
-        opener,
-        f"{BASE_URL}/api/auth/signin/email",
-        [
-            ("csrfToken", csrf_token),
-            ("email", SIGN_IN_EMAIL),
-            ("callbackUrl", f"{BASE_URL}/"),
-            ("json", "true"),
-        ],
-    )
-    require(
-        "verify-request" in signin_url or "verify-request" in signin_body,
-        "Email sign-in did not reach verify-request page",
-    )
-
-    magic_link = wait_for_magic_link(SIGN_IN_EMAIL, log_offset)
-    home_after_login = get(opener, magic_link)
-    require("Start Diagnosis" in home_after_login, "Signed-in home page did not render")
+    home_after_login = login(opener)
+    require("工作台" in home_after_login, "Signed-in home page did not render")
     require(
         scenario["label"] in home_after_login,
         f"Rail picker did not render label: {scenario['label']}",
@@ -274,36 +452,30 @@ def main(argv: list[str] | None = None) -> None:
     answers = scenario["answers"]
     require(isinstance(answers, list), "Smoke scenario answers must be a list")
 
-    for index, answer in enumerate(answers, start=1):
+    for index, _ in enumerate(answers, start=1):
         prompt = html.unescape(
             extract(r'<h1 class="display-title[^>]*">(.*?)</h1>', page, f"step {index} prompt")
         )
         print(f"step {index}: {prompt}")
 
-        a0 = html.unescape(extract(r'name="\$ACTION_1:0" value="([^"]+)"', page, "action field 0"))
-        a1 = html.unescape(extract(r'name="\$ACTION_1:1" value="([^"]+)"', page, "action field 1"))
-        a2 = html.unescape(extract(r'name="\$ACTION_1:2" value="([^"]+)"', page, "action field 2"))
+        first_step_mode = args.first_step_mode if index == 1 else "freeform"
+        answer = build_step_answer(scenario, index, first_step_mode)
+        submission_fields = build_answer_submission_fields(page, answer, first_step_mode)
 
         current_url, page = post_form(
             opener,
             current_url,
-            [
-                ("$ACTION_REF_1", ""),
-                ("$ACTION_1:0", a0),
-                ("$ACTION_1:1", a1),
-                ("$ACTION_1:2", a2),
-                ("answer", answer),
-            ],
+            submission_fields,
         )
 
     require(current_url.endswith(f"/history/{session_id}"), "Final redirect did not reach history detail")
 
     for needle in [
-        "Core diagnosis",
-        "Plain-language summary",
-        "Conversation transcript",
-        "Severity:",
-        "Action:",
+        "当前判断",
+        "为什么这样判断",
+        "优先做什么",
+        "白话总结",
+        "问答记录",
         str(scenario["label"]),
     ]:
         require(needle in page, f"Missing result marker: {needle}")
@@ -319,6 +491,36 @@ def main(argv: list[str] | None = None) -> None:
         f"where \"sessionId\" = '{session_id}';"
     )
     require(diagnosis_count == "1", "Diagnosis record was not persisted")
+
+    expected_pain_type = str(scenario["expectedPainType"])
+    stored_pain_type = query_scalar(
+        "select coalesce(\"painType\", '') from \"DiagnosisRecord\" "
+        f"where \"sessionId\" = '{session_id}' limit 1;"
+    )
+    require(
+        stored_pain_type == expected_pain_type,
+        f"Diagnosis record stored unexpected painType: {stored_pain_type}",
+    )
+
+    persistence_expectations = build_persistence_expectations(scenario)
+    stored_user_pain_type_message = query_scalar(
+        "select coalesce(content, '') from \"InterviewMessage\" "
+        f"where \"sessionId\" = '{session_id}' and role = 'USER' and \"stepKey\" = 'problem-symptom' "
+        "order by \"createdAt\" asc limit 1;"
+    )
+    require(
+        stored_user_pain_type_message == persistence_expectations["userMessageContent"],
+        "InterviewMessage stored an unexpected normalized symptom answer",
+    )
+
+    stored_session_pain_type = query_scalar(
+        "select coalesce(state->'fields'->>'painType', '') from \"InterviewSession\" "
+        f"where id = '{session_id}' limit 1;"
+    )
+    require(
+        stored_session_pain_type == persistence_expectations["sessionPainType"],
+        "InterviewSession state stored an unexpected painType value",
+    )
 
     stored_store_name = query_scalar(
         "select coalesce(\"storeName\", '') from \"InterviewSession\" "
@@ -337,6 +539,15 @@ def main(argv: list[str] | None = None) -> None:
         stored_role_name == str(scenario["roleName"]),
         "Interview session did not persist the smoke roleName context",
     )
+
+    post_run_markers = build_post_run_markers(session_id, scenario)
+    history_page = get(opener, f"{BASE_URL}/history")
+    for needle in post_run_markers["history"]:
+        require(needle in history_page, f"History page is missing marker: {needle}")
+
+    insights_page = get(opener, f"{BASE_URL}/insights")
+    for needle in post_run_markers["insights"]:
+        require(needle in insights_page, f"Insights page is missing marker: {needle}")
 
     print(f"completed session: {session_id}")
     print(f"rail: {scenario['railKey']}")

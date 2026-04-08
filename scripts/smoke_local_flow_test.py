@@ -5,7 +5,15 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from smoke_local_flow import extract_magic_link, get_smoke_scenario
+from smoke_local_flow import (
+    build_answer_submission_fields,
+    build_step_answer,
+    build_persistence_expectations,
+    build_post_run_markers,
+    extract_magic_link,
+    get_smoke_scenario,
+    normalize_local_redirect,
+)
 
 
 class SmokeLocalFlowScenarioTests(unittest.TestCase):
@@ -13,19 +21,104 @@ class SmokeLocalFlowScenarioTests(unittest.TestCase):
         scenario = get_smoke_scenario("inventory-replenishment")
 
         self.assertEqual(scenario["railKey"], "inventory-replenishment")
-        self.assertEqual(scenario["label"], "Inventory and replenishment")
-        self.assertEqual(scenario["storeName"], "Store 12")
-        self.assertEqual(scenario["roleName"], "Store manager")
+        self.assertEqual(scenario["label"], "库存与补货")
+        self.assertEqual(scenario["storeName"], "12号店")
+        self.assertEqual(scenario["roleName"], "门店店长")
+        self.assertEqual(scenario["expectedPainType"], "stockout")
         self.assertEqual(scenario["answers"][0], "stockout")
 
     def test_supports_warehouse_receiving_scenario(self) -> None:
         scenario = get_smoke_scenario("warehouse-receiving")
 
         self.assertEqual(scenario["railKey"], "warehouse-receiving")
-        self.assertEqual(scenario["label"], "Warehouse receiving")
-        self.assertEqual(scenario["storeName"], "North Hub")
-        self.assertEqual(scenario["roleName"], "Warehouse supervisor")
+        self.assertEqual(scenario["label"], "仓库收货")
+        self.assertEqual(scenario["storeName"], "华北仓")
+        self.assertEqual(scenario["roleName"], "仓库主管")
+        self.assertEqual(scenario["expectedPainType"], "overstock")
         self.assertEqual(scenario["answers"][0], "overstock")
+
+    def test_supports_store_service_complaints_scenario(self) -> None:
+        scenario = get_smoke_scenario("store-service-complaints")
+
+        self.assertEqual(scenario["railKey"], "store-service-complaints")
+        self.assertEqual(scenario["label"], "门店服务体验与客诉")
+        self.assertEqual(scenario["storeName"], "人民广场店")
+        self.assertEqual(scenario["roleName"], "门店店长")
+        self.assertEqual(scenario["expectedPainType"], "service-delay")
+        self.assertEqual(scenario["answers"][0], "等待太久")
+
+    def test_builds_post_run_markers_for_history_and_insights_checks(self) -> None:
+        scenario = get_smoke_scenario("store-service-complaints")
+
+        markers = build_post_run_markers("session-123", scenario)
+
+        self.assertEqual(markers["history"], ["/history/session-123", "人民广场店", "门店店长"])
+        self.assertEqual(markers["insights"], ["/history/session-123", "门店服务体验与客诉"])
+
+    def test_builds_persistence_expectations_from_canonical_pain_type(self) -> None:
+        scenario = get_smoke_scenario("store-service-complaints")
+
+        expectations = build_persistence_expectations(scenario)
+
+        self.assertEqual(expectations["userMessageContent"], "service-delay")
+        self.assertEqual(expectations["sessionPainType"], "service-delay")
+
+    def test_builds_quick_choice_submission_fields_from_the_matching_form(self) -> None:
+        page = """
+        <form>
+          <input type="hidden" name="$ACTION_1:0" value="alpha"/>
+          <input type="hidden" name="$ACTION_1:1" value="beta"/>
+          <button type="submit" name="answer" value="service-delay">等待太久</button>
+        </form>
+        <form>
+          <input type="hidden" name="$ACTION_2:0" value="gamma"/>
+          <textarea name="answer"></textarea>
+        </form>
+        """
+
+        fields = build_answer_submission_fields(page, "service-delay", "quick-choice")
+
+        self.assertEqual(
+            fields,
+            [
+                ("$ACTION_REF_1", ""),
+                ("$ACTION_1:0", "alpha"),
+                ("$ACTION_1:1", "beta"),
+                ("answer", "service-delay"),
+            ],
+        )
+
+    def test_builds_freeform_submission_fields_from_the_textarea_form(self) -> None:
+        page = """
+        <form>
+          <input type="hidden" name="$ACTION_1:0" value="alpha"/>
+          <button type="submit" name="answer" value="service-delay">等待太久</button>
+        </form>
+        <form>
+          <input type="hidden" name="$ACTION_2:0" value="gamma"/>
+          <input type="hidden" name="$ACTION_2:1" value="delta"/>
+          <textarea name="answer"></textarea>
+        </form>
+        """
+
+        fields = build_answer_submission_fields(page, "等待太久", "freeform")
+
+        self.assertEqual(
+            fields,
+            [
+                ("$ACTION_REF_2", ""),
+                ("$ACTION_2:0", "gamma"),
+                ("$ACTION_2:1", "delta"),
+                ("answer", "等待太久"),
+            ],
+        )
+
+    def test_uses_canonical_answer_value_for_quick_choice_first_step(self) -> None:
+        scenario = get_smoke_scenario("store-service-complaints")
+
+        self.assertEqual(build_step_answer(scenario, 1, "quick-choice"), "service-delay")
+        self.assertEqual(build_step_answer(scenario, 1, "freeform"), "等待太久")
+        self.assertEqual(build_step_answer(scenario, 2, "quick-choice"), "每个周末晚高峰")
 
     def test_rejects_unknown_rail_key(self) -> None:
         with self.assertRaises(SystemExit):
@@ -59,6 +152,16 @@ class SmokeLocalFlowScenarioTests(unittest.TestCase):
         self.assertEqual(
             extract_magic_link(loopback_log, "qa@store.com", "http://localhost:3000"),
             "http://localhost:3000/api/auth/callback/email?token=def&email=qa%40store.com",
+        )
+
+    def test_normalize_local_redirect_uses_current_base_origin(self) -> None:
+        self.assertEqual(
+            normalize_local_redirect("http://localhost:3000/"),
+            "http://127.0.0.1:3000/",
+        )
+        self.assertEqual(
+            normalize_local_redirect("/history/demo"),
+            "http://127.0.0.1:3000/history/demo",
         )
 
 

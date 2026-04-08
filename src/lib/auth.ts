@@ -8,6 +8,7 @@ import {
   rewriteVerificationUrlToCallbackOrigin,
 } from "@/lib/auth-navigation";
 import { prisma } from "@/lib/db";
+import { getDirectDevAuthSession, isDirectDevAuthEnabled } from "@/lib/direct-auth";
 
 type SendEmailParams = {
   identifier: string;
@@ -35,9 +36,9 @@ async function sendVerificationRequest({
   await transport.sendMail({
     to: identifier,
     from: provider.from ?? process.env.EMAIL_FROM ?? "diagnosis@local.test",
-    subject: "Your Guided Pain Discovery sign-in link",
-    text: `Use this sign-in link: ${resolvedUrl}`,
-    html: `<p>Use this sign-in link:</p><p><a href="${resolvedUrl}">${resolvedUrl}</a></p>`,
+    subject: "你的引导式痛点诊断登录链接",
+    text: `请使用这个登录链接：${resolvedUrl}`,
+    html: `<p>请使用这个登录链接：</p><p><a href="${resolvedUrl}">${resolvedUrl}</a></p>`,
   });
 }
 
@@ -95,6 +96,16 @@ export const authOptions: NextAuthOptions = {
   },
 };
 
-export function getAuthSession() {
+export async function getAuthSession() {
+  const directDevSession = await getDirectDevAuthSession();
+
+  if (directDevSession) {
+    return directDevSession;
+  }
+
+  if (isDirectDevAuthEnabled()) {
+    return null;
+  }
+
   return getServerSession(authOptions);
 }

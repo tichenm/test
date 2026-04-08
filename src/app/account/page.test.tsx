@@ -2,11 +2,16 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const getAuthSessionMock = vi.fn();
+const isDirectDevAuthEnabledMock = vi.fn();
 const buildLoginRedirectMock = vi.fn();
 const redirectMock = vi.fn();
 
 vi.mock("@/lib/auth", () => ({
   getAuthSession: (...args: unknown[]) => getAuthSessionMock(...args),
+}));
+
+vi.mock("@/lib/direct-auth", () => ({
+  isDirectDevAuthEnabled: (...args: unknown[]) => isDirectDevAuthEnabledMock(...args),
 }));
 
 vi.mock("@/lib/auth-navigation", () => ({
@@ -18,7 +23,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/app/account/sign-out-button", () => ({
-  SignOutButton: () => <div>Sign out button</div>,
+  SignOutButton: () => <div>退出登录按钮</div>,
 }));
 
 import AccountPage from "@/app/account/page";
@@ -26,12 +31,14 @@ import AccountPage from "@/app/account/page";
 describe("AccountPage", () => {
   beforeEach(() => {
     getAuthSessionMock.mockReset();
+    isDirectDevAuthEnabledMock.mockReset();
     buildLoginRedirectMock.mockReset();
     redirectMock.mockReset();
   });
 
   it("redirects unauthenticated users back through login", async () => {
     getAuthSessionMock.mockResolvedValue(null);
+    isDirectDevAuthEnabledMock.mockReturnValue(false);
     buildLoginRedirectMock.mockReturnValue("/login?callbackUrl=%2Faccount&reason=auth");
     redirectMock.mockImplementation(() => {
       throw new Error("NEXT_REDIRECT");
@@ -47,13 +54,28 @@ describe("AccountPage", () => {
     getAuthSessionMock.mockResolvedValue({
       user: { id: "user-1", email: "manager@store.com" },
     });
+    isDirectDevAuthEnabledMock.mockReturnValue(false);
 
     render(await AccountPage());
 
-    expect(screen.getByText("Manage your session")).toBeInTheDocument();
+    expect(screen.getByText("管理当前会话")).toBeInTheDocument();
     expect(screen.getByText("manager@store.com")).toBeInTheDocument();
-    expect(screen.getByText("Open workbench")).toBeInTheDocument();
-    expect(screen.getByText("Review history")).toBeInTheDocument();
-    expect(screen.getByText("Sign out button")).toBeInTheDocument();
+    expect(screen.getByText("打开工作台")).toBeInTheDocument();
+    expect(screen.getByText("查看历史")).toBeInTheDocument();
+    expect(screen.getByText("退出登录按钮")).toBeInTheDocument();
+  });
+
+  it("renders a direct logout link when local development auth bypass is enabled", async () => {
+    getAuthSessionMock.mockResolvedValue({
+      user: { id: "user-1", email: "manager@store.com" },
+    });
+    isDirectDevAuthEnabledMock.mockReturnValue(true);
+
+    render(await AccountPage());
+
+    expect(screen.getByRole("link", { name: "退出登录" })).toHaveAttribute(
+      "href",
+      "/api/dev-logout",
+    );
   });
 });

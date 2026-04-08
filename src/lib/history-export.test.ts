@@ -40,15 +40,15 @@ describe("history export", () => {
     const csv = buildHistoryExportCsv(sessions);
 
     expect(csv).toContain(
-      "Session ID,Started At,Session Status,Workflow,Site,Role,Pain Type,Severity,Review Status,Owner,Next Action,Likely Root Cause,Review Note,Summary",
+      "会话ID,开始时间,会话状态,诊断流程,站点,角色,痛点类型,严重程度,跟进状态,负责人,建议动作,可能根因,跟进备注,总结",
     );
     expect(csv).toContain("completed-1");
-    expect(csv).toContain("Inventory and replenishment");
-    expect(csv).toContain("New");
+    expect(csv).toContain("库存与补货");
+    expect(csv).toContain("待跟进");
     expect(csv).toContain("active-1");
-    expect(csv).toContain("Active draft");
-    expect(csv).toContain("Not specified");
-    expect(csv).toContain("Stockout");
+    expect(csv).toContain("进行中的草稿");
+    expect(csv).toContain("未填写");
+    expect(csv).toContain("缺货");
   });
 
   it("escapes commas and quotes in exported fields", () => {
@@ -110,7 +110,7 @@ describe("history export", () => {
 
   it("creates a dated filename for filtered history exports", () => {
     expect(buildHistoryExportFilename(new Date("2026-04-06T12:00:00.000Z"))).toBe(
-      "guided-pain-history-2026-04-06.csv",
+      "pain-history-2026-04-06.csv",
     );
   });
 });

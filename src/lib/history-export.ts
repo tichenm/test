@@ -66,41 +66,41 @@ function escapeCsvValue(value: string) {
 
 export function buildHistoryExportCsv<T extends ExportSession>(sessions: T[]) {
   const header = [
-    "Session ID",
-    "Started At",
-    "Session Status",
-    "Workflow",
-    "Site",
-    "Role",
-    "Pain Type",
-    "Severity",
-    "Review Status",
-    "Owner",
-    "Next Action",
-    "Likely Root Cause",
-    "Review Note",
-    "Summary",
+    "会话ID",
+    "开始时间",
+    "会话状态",
+    "诊断流程",
+    "站点",
+    "角色",
+    "痛点类型",
+    "严重程度",
+    "跟进状态",
+    "负责人",
+    "建议动作",
+    "可能根因",
+    "跟进备注",
+    "总结",
   ];
 
   const rows = sessions.map((session) => [
     session.id,
     formatTimestamp(session.startedAt),
-    session.status === "COMPLETED" ? "Completed" : "Active draft",
+    session.status === "COMPLETED" ? "已完成" : "进行中的草稿",
     getInterviewRailLabel(session.railKey),
-    formatText(session.storeName, "Not specified"),
-    formatText(session.roleName, "Not specified"),
+    formatText(session.storeName, "未填写"),
+    formatText(session.roleName, "未填写"),
     session.diagnosisRecord
       ? getDiagnosisPainTypeLabel(session.diagnosisRecord.painType)
-      : "Not diagnosed",
-    formatText(session.diagnosisRecord?.severity, "Not diagnosed"),
+      : "未诊断",
+    formatText(session.diagnosisRecord?.severity, "未诊断"),
     session.diagnosisRecord
       ? getDiagnosisReviewStatusLabel(session.diagnosisRecord.reviewStatus)
-      : "Not diagnosed",
-    formatText(session.diagnosisRecord?.ownerName, "Unassigned"),
-    formatText(session.diagnosisRecord?.nextAction, "Continue the guided review."),
-    formatText(session.diagnosisRecord?.likelyRootCause, "Not diagnosed"),
-    formatText(session.diagnosisRecord?.reviewNote, "No follow-up note yet."),
-    formatText(session.diagnosisRecord?.aiSummary, "No summary yet."),
+      : "未诊断",
+    formatText(session.diagnosisRecord?.ownerName, "未指派"),
+    formatText(session.diagnosisRecord?.nextAction, "继续完成引导式诊断。"),
+    formatText(session.diagnosisRecord?.likelyRootCause, "未诊断"),
+    formatText(session.diagnosisRecord?.reviewNote, "还没有跟进备注。"),
+    formatText(session.diagnosisRecord?.aiSummary, "还没有总结。"),
   ]);
 
   return [header, ...rows]
@@ -110,7 +110,7 @@ export function buildHistoryExportCsv<T extends ExportSession>(sessions: T[]) {
 
 export function buildHistoryExportFilename(now: Date) {
   const date = now.toISOString().slice(0, 10);
-  return `guided-pain-history-${date}.csv`;
+  return `pain-history-${date}.csv`;
 }
 
 export function buildHistoryExportHref(filters: ExportHrefFilters) {

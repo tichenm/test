@@ -5,6 +5,7 @@ import { getAuthSession } from "@/lib/auth";
 import { buildLoginRedirect } from "@/lib/auth-navigation";
 import { buildDiagnosisHandoffBrief } from "@/lib/diagnosis-handoff";
 import {
+  getDiagnosisSeverityLabel,
   getDiagnosisReviewStatusLabel,
   getInterviewRailLabel,
 } from "@/lib/interview-presenters";
@@ -25,30 +26,39 @@ type RecapDiagnosisFields = {
 function getRecapHeading(likelyRootCause: string) {
   const normalized = likelyRootCause.toLowerCase();
 
-  if (normalized.includes("hq or system issue")) {
-    return "This looks mostly upstream";
+  if (
+    likelyRootCause.includes("上游") ||
+    likelyRootCause.includes("系统问题") ||
+    normalized.includes("hq") ||
+    normalized.includes("system issue") ||
+    normalized.includes("upstream")
+  ) {
+    return "更像是上游触发的问题";
   }
 
-  if (normalized.includes("store execution issue")) {
-    return "This looks mostly like a store execution gap";
+  if (
+    likelyRootCause.includes("门店执行") ||
+    normalized.includes("store execution")
+  ) {
+    return "更像是门店执行侧的缺口";
   }
 
-  return "This looks like a split ownership problem";
+  return "更像是职责分散导致的协同问题";
 }
 
 function buildEvidenceCards(diagnosis: RecapDiagnosisFields) {
   return [
     {
-      label: "Pattern",
-      body: `This issue repeats ${diagnosis.frequency} and clusters around ${diagnosis.timeWindow}.`,
+      label: "重复模式",
+      body: `这个问题会在${diagnosis.frequency}重复出现，主要集中在${diagnosis.timeWindow}。`,
     },
     {
-      label: "Where it shows up",
-      body: `It is showing up around ${diagnosis.affectedScope} and the impact is ${diagnosis.operationalImpact}.`,
+      label: "发生位置",
+      body: `它主要出现在${diagnosis.affectedScope}，带来的影响是${diagnosis.operationalImpact}。`,
     },
     {
-      label: "Workaround signal",
-      body: `The strongest signal is around ${diagnosis.peopleInvolved}. Right now the team is compensating through ${diagnosis.currentWorkaround}.`,
+      label: "补救信号",
+      body: `最强的信号来自${diagnosis.peopleInvolved}。目前团队正在通过${diagnosis.currentWorkaround}来补救。`,
     },
   ];
 }
@@ -107,12 +117,12 @@ export default async function DiagnosisDetailPage({
   return (
     <main className="flex flex-1 flex-col gap-5 pb-8 pt-4">
       <Link href="/history" className="text-sm font-medium text-[var(--color-accent)]">
-        Back to history
+        返回历史
       </Link>
 
       <section className="app-card flex flex-col gap-4 p-6">
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-          What we think is happening
+          当前判断
         </p>
         <div className="flex flex-wrap items-center gap-3 text-sm">
           <span className="rounded-full bg-[var(--color-surface-strong)] px-3 py-2">
@@ -129,10 +139,10 @@ export default async function DiagnosisDetailPage({
             </span>
           ) : null}
           <span className="rounded-full bg-[var(--color-surface-strong)] px-3 py-2">
-            Severity: {diagnosis.severity}
+            严重程度：{getDiagnosisSeverityLabel(diagnosis.severity)}
           </span>
           <span className="rounded-full bg-[var(--color-surface-strong)] px-3 py-2">
-            Follow-up: {getDiagnosisReviewStatusLabel(diagnosis.reviewStatus)}
+            跟进状态：{getDiagnosisReviewStatusLabel(diagnosis.reviewStatus)}
           </span>
         </div>
         <h1 className="display-title text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -144,9 +154,9 @@ export default async function DiagnosisDetailPage({
       <section className="grid gap-4 lg:grid-cols-3">
         <div className="app-card flex flex-col gap-4 p-6 lg:col-span-3">
           <div className="space-y-1">
-            <h2 className="display-title text-2xl font-semibold">Why we think that</h2>
+            <h2 className="display-title text-2xl font-semibold">为什么这样判断</h2>
             <p className="muted text-sm leading-6">
-              These are the signals that most strongly shaped the diagnosis.
+              下面这些信号，是这次诊断最关键的判断依据。
             </p>
           </div>
         </div>
@@ -160,97 +170,97 @@ export default async function DiagnosisDetailPage({
       </section>
 
       <section className="app-card flex flex-col gap-3 p-6">
-        <h2 className="display-title text-2xl font-semibold">What to do first</h2>
+        <h2 className="display-title text-2xl font-semibold">优先做什么</h2>
         <p className="text-base leading-7">{diagnosis.nextAction}</p>
         <p className="muted text-sm leading-6">
-          Start here first. If this holds up, then expand into a broader fix.
+          先从这里开始验证。如果有效，再扩大成更完整的修复动作。
         </p>
       </section>
 
       <section className="app-card flex flex-col gap-4 p-6">
         <div className="space-y-1">
-          <h2 className="display-title text-2xl font-semibold">What the team is doing now</h2>
+          <h2 className="display-title text-2xl font-semibold">团队当前状态</h2>
           <p className="muted text-sm leading-6">
-            Review the current owner, status, and note before changing the follow-up.
+            在调整后续动作前，先确认当前负责人、状态和备注。
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
-          <StatusDetail label="Current owner" value={diagnosis.ownerName || "Unassigned"} />
+          <StatusDetail label="当前负责人" value={diagnosis.ownerName || "未指派"} />
           <StatusDetail
-            label="Current status"
+            label="当前状态"
             value={getDiagnosisReviewStatusLabel(diagnosis.reviewStatus)}
           />
           <StatusDetail
-            label="Latest note"
-            value={diagnosis.reviewNote || "No follow-up note yet."}
+            label="最新备注"
+            value={diagnosis.reviewNote || "还没有跟进备注。"}
           />
         </div>
       </section>
 
       <section className="app-card flex flex-col gap-3 p-6">
-        <h2 className="display-title text-2xl font-semibold">Plain-language summary</h2>
+        <h2 className="display-title text-2xl font-semibold">白话总结</h2>
         <p className="muted leading-7">{diagnosis.aiSummary}</p>
       </section>
 
       <section className="app-card flex flex-col gap-4 p-6">
         <div className="space-y-1">
-          <h2 className="display-title text-2xl font-semibold">Management follow-up</h2>
+          <h2 className="display-title text-2xl font-semibold">管理跟进</h2>
           <p className="muted text-sm leading-6">
-            Assign an owner and move this diagnosis through review, acceptance, and resolution.
+            给这条诊断明确负责人，并推动它进入跟进、采纳和解决。
           </p>
         </div>
 
         <form action={saveFollowUpAction} className="grid gap-4">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-            Update follow-up
+            更新跟进信息
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="grid gap-2 text-sm font-medium">
-              Follow-up status
+              跟进状态
               <select
                 name="reviewStatus"
                 defaultValue={diagnosis.reviewStatus}
                 className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] px-4"
               >
-                <option value="new">New</option>
-                <option value="reviewing">Reviewing</option>
-                <option value="accepted">Accepted</option>
-                <option value="resolved">Resolved</option>
+                <option value="new">待跟进</option>
+                <option value="reviewing">跟进中</option>
+                <option value="accepted">已采纳</option>
+                <option value="resolved">已解决</option>
               </select>
             </label>
 
             <label className="grid gap-2 text-sm font-medium">
-              Owner
+              负责人
               <input
                 name="ownerName"
                 defaultValue={diagnosis.ownerName ?? ""}
-                placeholder="Ops lead, site manager, project owner"
+                placeholder="例如：运营负责人、站点经理、项目负责人"
                 className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] px-4"
               />
             </label>
           </div>
 
           <label className="grid gap-2 text-sm font-medium">
-            Review note
+            跟进备注
             <textarea
               name="reviewNote"
               defaultValue={diagnosis.reviewNote ?? ""}
               rows={4}
-              placeholder="What is being checked, what decision was made, or what remains blocked?"
+              placeholder="当前在验证什么、做了什么决定、还卡在哪里？"
               className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] px-4 py-3 leading-6"
             />
           </label>
 
           <div className="flex items-center justify-between gap-3">
             <div className="text-sm text-[var(--color-text-muted)]">
-              <p>Current owner: {diagnosis.ownerName || "Unassigned"}</p>
-              <p>Latest note: {diagnosis.reviewNote || "No follow-up note yet."}</p>
+              <p>当前负责人：{diagnosis.ownerName || "未指派"}</p>
+              <p>最新备注：{diagnosis.reviewNote || "还没有跟进备注。"}</p>
             </div>
             <button
               type="submit"
               className="min-h-11 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 text-sm font-semibold text-[var(--color-accent-foreground)]"
             >
-              Save follow-up
+              保存跟进
             </button>
           </div>
         </form>
@@ -259,24 +269,24 @@ export default async function DiagnosisDetailPage({
       <section className="app-card flex flex-col gap-4 p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
-            <h2 className="display-title text-2xl font-semibold">Handoff brief</h2>
+            <h2 className="display-title text-2xl font-semibold">交接摘要</h2>
             <p className="muted text-sm leading-6">
-              Use this plain-text brief when escalating the issue to a site lead, project owner, or regional manager.
+              当你要把问题升级给站点负责人、项目负责人或区域经理时，可以直接使用这份纯文本摘要。
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link
+            <a
               href={`/history/${sessionId}/brief`}
               className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 text-sm font-medium"
             >
-              Open plain text
-            </Link>
-            <Link
+              打开纯文本
+            </a>
+            <a
               href={`/history/${sessionId}/brief?download=1`}
               className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-accent-foreground)]"
             >
-              Download brief
-            </Link>
+              下载摘要
+            </a>
           </div>
         </div>
 
@@ -286,7 +296,7 @@ export default async function DiagnosisDetailPage({
       </section>
 
       <section className="app-card flex flex-col gap-4 p-6">
-        <h2 className="display-title text-2xl font-semibold">Conversation transcript</h2>
+        <h2 className="display-title text-2xl font-semibold">问答记录</h2>
         <ul className="grid gap-3">
           {interview.messages.map((message) => (
             <li
@@ -294,7 +304,11 @@ export default async function DiagnosisDetailPage({
               className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] p-4"
             >
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                {message.role.toLowerCase()}
+                {message.role === "ASSISTANT"
+                  ? "助手"
+                  : message.role === "USER"
+                    ? "用户"
+                    : "系统"}
               </p>
               <p className="mt-2 text-sm leading-6">{message.content}</p>
             </li>

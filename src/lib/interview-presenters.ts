@@ -30,23 +30,33 @@ export function getInterviewCardTitle(params: InterviewTitleParams) {
     return getDiagnosisPainTypeLabel(params.diagnosisRecord.painType);
   }
 
-  return `${getInterviewRailLabel(params.railKey)} review in progress`;
+  return `${getInterviewRailLabel(params.railKey)}诊断进行中`;
 }
 
 export function getEmptyHistoryCopy() {
-  return "Start one guided review to turn a fuzzy issue into a clear problem statement.";
+  return "先开始一次引导式诊断，把模糊问题收敛成清晰的问题定义。";
 }
 
 export function getDiagnosisReviewStatusLabel(status: string) {
   switch (status) {
     case "reviewing":
-      return "Reviewing";
+      return "跟进中";
     case "accepted":
-      return "Accepted";
+      return "已采纳";
     case "resolved":
-      return "Resolved";
+      return "已解决";
     case "new":
     default:
-      return "New";
+      return "待跟进";
+  }
+}
+
+export function getDiagnosisSeverityLabel(severity: string) {
+  switch (severity) {
+    case "high":
+      return "高";
+    case "medium":
+    default:
+      return "中";
   }
 }

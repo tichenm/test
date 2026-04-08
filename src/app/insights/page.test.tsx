@@ -57,8 +57,8 @@ describe("InsightsPage", () => {
 
     buildHistoryFilterHrefMock.mockReturnValue("/history?status=completed");
     getDiagnosisReviewStatusLabelMock.mockImplementation((value: string) => value);
-    getInterviewCardTitleMock.mockReturnValue("Shared root cause");
-    getInterviewRailLabelMock.mockReturnValue("Store stock and replenishment");
+    getInterviewCardTitleMock.mockReturnValue("共同导致的问题");
+    getInterviewRailLabelMock.mockReturnValue("门店库存与补货");
   });
 
   it("redirects unauthenticated users back through login", async () => {
@@ -99,12 +99,12 @@ describe("InsightsPage", () => {
 
     render(await InsightsPage());
 
-    expect(screen.getByText("See which floor problems keep repeating.")).toBeInTheDocument();
-    expect(screen.getByText("Total sessions")).toBeInTheDocument();
-    expect(screen.getByText("Most common pain")).toBeInTheDocument();
-    expect(screen.getByText("Complete a few diagnoses before reading trends.")).toBeInTheDocument();
-    expect(screen.getByText("Start a diagnosis")).toBeInTheDocument();
-    expect(screen.getByText("Review history")).toBeInTheDocument();
+    expect(screen.getByText("看清哪些一线问题在反复出现。")).toBeInTheDocument();
+    expect(screen.getByText("总会话数")).toBeInTheDocument();
+    expect(screen.getByText("最高频痛点")).toBeInTheDocument();
+    expect(screen.getByText("先完成几条诊断，再来看趋势。")).toBeInTheDocument();
+    expect(screen.getByText("开始诊断")).toBeInTheDocument();
+    expect(screen.getByText("查看历史")).toBeInTheDocument();
   });
 
   it("renders trend breakdowns and recent diagnoses once completed sessions exist", async () => {
@@ -120,13 +120,13 @@ describe("InsightsPage", () => {
         topPainType: "stockout",
         topPainTypeCount: 3,
       },
-      railBreakdown: [{ key: "store-stock-replenishment", label: "Store stock", count: 3 }],
+      railBreakdown: [{ key: "store-stock-replenishment", label: "门店库存与补货", count: 3 }],
       roleBreakdown: [{ key: "Store manager", label: "Store manager", count: 2 }],
-      painTypeBreakdown: [{ key: "stockout", label: "Stockout", count: 3 }],
+      painTypeBreakdown: [{ key: "stockout", label: "缺货", count: 3 }],
       topActions: [{ label: "Tighten replenishment handoff before Friday close.", count: 2 }],
       storeBreakdown: [{ key: "Store 12", label: "Store 12", count: 2 }],
-      reviewStatusBreakdown: [{ key: "reviewing", label: "reviewing", count: 2 }],
-      severityBreakdown: [{ key: "high", label: "high", count: 3 }],
+      reviewStatusBreakdown: [{ key: "reviewing", label: "跟进中", count: 2 }],
+      severityBreakdown: [{ key: "high", label: "高", count: 3 }],
       recentCompleted: [
         {
           id: "session-1",
@@ -144,12 +144,17 @@ describe("InsightsPage", () => {
 
     render(await InsightsPage());
 
-    expect(screen.getByText("Issues by workflow")).toBeInTheDocument();
-    expect(screen.getByText("Issues by role")).toBeInTheDocument();
-    expect(screen.getByText("Repeated next actions")).toBeInTheDocument();
-    expect(screen.getByText("Recent completed")).toBeInTheDocument();
+    expect(screen.getByText("按流程查看问题")).toBeInTheDocument();
+    expect(screen.getByText("按角色查看问题")).toBeInTheDocument();
+    expect(screen.getByText("高频下一步动作")).toBeInTheDocument();
+    expect(screen.getByText("最新结构化诊断")).toBeInTheDocument();
     expect(screen.getByText("Tighten replenishment handoff before Friday close.")).toBeInTheDocument();
     expect(screen.getByText("Review replenishment ownership before the next shift.")).toBeInTheDocument();
-    expect(screen.getByText("Shared root cause")).toBeInTheDocument();
+    expect(screen.getByText("共同导致的问题")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", {
+        name: /门店库存与补货Store 12Store managerreviewing共同导致的问题.*Review replenishment ownership before the next shift\./,
+      }),
+    ).toHaveAttribute("href", "/history/session-1");
   });
 });

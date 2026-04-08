@@ -21,8 +21,8 @@ describe("LoginForm", () => {
 
     render(<LoginForm />);
 
-    await user.type(screen.getByLabelText("Work email"), "manager@store.com");
-    await user.click(screen.getByRole("button", { name: "Send sign-in link" }));
+    await user.type(screen.getByLabelText("工作邮箱"), "manager@store.com");
+    await user.click(screen.getByRole("button", { name: "发送登录链接" }));
 
     await waitFor(() => {
       expect(signInMock).toHaveBeenCalledWith("email", {
@@ -39,8 +39,8 @@ describe("LoginForm", () => {
 
     render(<LoginForm callbackPath="/history" />);
 
-    await user.type(screen.getByLabelText("Work email"), "manager@store.com");
-    await user.click(screen.getByRole("button", { name: "Send sign-in link" }));
+    await user.type(screen.getByLabelText("工作邮箱"), "manager@store.com");
+    await user.click(screen.getByRole("button", { name: "发送登录链接" }));
 
     await waitFor(() => {
       expect(signInMock).toHaveBeenCalledWith("email", {
@@ -53,14 +53,27 @@ describe("LoginForm", () => {
 
   it("shows an auth notice when the user was redirected from a protected page", () => {
     render(
-      <LoginForm
-        callbackPath="/history"
-        notice="Sign in to continue to the page you asked for."
-      />,
-    );
+        <LoginForm
+          callbackPath="/history"
+          notice="请先登录，再继续访问你刚才打开的页面。"
+        />,
+      );
 
     expect(
-      screen.getByText("Sign in to continue to the page you asked for."),
+      screen.getByText("请先登录，再继续访问你刚才打开的页面。"),
     ).toBeInTheDocument();
+  });
+
+  it("renders a direct-entry form in local development mode", () => {
+    render(<LoginForm authMode="direct-dev" callbackPath="/history" />);
+
+    expect(
+      screen.getByText("当前是本地开发模式。输入工作邮箱后可直接进入，无需邮件验证。"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "直接进入" })).toBeInTheDocument();
+    expect(screen.getByDisplayValue("/history")).toHaveAttribute("name", "callbackPath");
+    expect(screen.getByDisplayValue("/history")).toHaveAttribute("type", "hidden");
+    expect(screen.getByRole("form")).toHaveAttribute("action", "/api/dev-login");
+    expect(screen.getByRole("form")).toHaveAttribute("method", "post");
   });
 });

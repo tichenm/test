@@ -14,10 +14,10 @@ import {
 import { listInterviewSessionsForUser } from "@/lib/interviews";
 
 function formatTimestamp(value: Date) {
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "numeric",
     day: "numeric",
-    hour: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
   }).format(value);
 }
@@ -37,39 +37,39 @@ export default async function InsightsPage() {
       <section className="app-card flex flex-col gap-4 p-6 sm:p-8">
         <div className="space-y-3">
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
-            Insights
+            洞察
           </p>
           <h1 className="display-title text-4xl font-semibold tracking-tight sm:text-5xl">
-            See which floor problems keep repeating.
+            看清哪些一线问题在反复出现。
           </h1>
           <p className="muted max-w-2xl text-base leading-7">
-            Turn completed guided diagnoses into a small operating signal board for managers.
+            把已完成的引导式诊断整理成管理者可用的运营信号面板。
           </p>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard
-            label="Total sessions"
+            label="总会话数"
             value={String(insights.summary.totalSessions)}
-            caption="All drafts and completed guided reviews."
+            caption="包含所有草稿与已完成诊断。"
           />
           <MetricCard
-            label="Completed diagnoses"
+            label="已完成诊断"
             value={String(insights.summary.completedSessions)}
-            caption="Structured issues ready for review."
+            caption="已经结构化、可进入跟进的问题。"
           />
           <MetricCard
-            label="Active drafts"
+            label="进行中的草稿"
             value={String(insights.summary.activeSessions)}
-            caption="Unfinished guided reviews still in progress."
+            caption="仍在进行中的未完成诊断。"
           />
           <MetricCard
-            label="Most common pain"
-            value={insights.summary.topPainType ?? "None yet"}
+            label="最高频痛点"
+            value={insights.summary.topPainType ?? "暂无"}
             caption={
               insights.summary.topPainType
-                ? `${insights.summary.topPainTypeCount} completed diagnoses`
-                : "Complete a diagnosis to populate trends."
+                ? `${insights.summary.topPainTypeCount} 条已完成诊断`
+                : "完成几条诊断后，这里会开始出现趋势。"
             }
           />
         </div>
@@ -78,23 +78,23 @@ export default async function InsightsPage() {
       {insights.summary.completedSessions === 0 ? (
         <section className="app-card flex flex-col gap-3 p-6">
           <h2 className="display-title text-2xl font-semibold">
-            Complete a few diagnoses before reading trends.
+            先完成几条诊断，再来看趋势。
           </h2>
           <p className="muted max-w-2xl text-sm leading-6">
-            This view starts to become useful once managers have a few finished interviews to compare.
+            当管理者手上有几条已完成访谈后，这个页面才会真正有参考价值。
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
               href="/"
               className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-accent-foreground)]"
             >
-              Start a diagnosis
+              开始诊断
             </Link>
             <Link
               href="/history"
               className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 text-sm font-medium"
             >
-              Review history
+              查看历史
             </Link>
           </div>
         </section>
@@ -102,8 +102,8 @@ export default async function InsightsPage() {
         <>
           <section className="grid gap-4 lg:grid-cols-2">
             <BreakdownCard
-              title="Issues by workflow"
-              description="Which guided rails are surfacing the most completed problems."
+              title="按流程查看问题"
+              description="哪些引导流程产出了最多已完成问题。"
               items={insights.railBreakdown.map((item) => ({
                 ...item,
                 href: buildHistoryFilterHref({
@@ -113,8 +113,8 @@ export default async function InsightsPage() {
               }))}
             />
             <BreakdownCard
-              title="Issues by role"
-              description="Which frontline functions keep surfacing the same structured pain."
+              title="按角色查看问题"
+              description="哪些一线岗位反复暴露出同类结构化痛点。"
               items={insights.roleBreakdown.map((item) => ({
                 ...item,
                 href: buildHistoryFilterHref({
@@ -127,8 +127,8 @@ export default async function InsightsPage() {
 
           <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
             <BreakdownCard
-              title="Issues by pain type"
-              description="What kind of operating pain managers are hearing most often."
+              title="按痛点类型查看"
+              description="管理者最常听到的是哪类运营痛点。"
               items={insights.painTypeBreakdown.map((item) => ({
                 ...item,
                 href: buildHistoryFilterHref({
@@ -139,9 +139,9 @@ export default async function InsightsPage() {
             />
             <section className="app-card flex flex-col gap-4 p-6">
               <div className="space-y-1">
-                <h2 className="display-title text-2xl font-semibold">Repeated next actions</h2>
+                <h2 className="display-title text-2xl font-semibold">高频下一步动作</h2>
                 <p className="muted text-sm leading-6">
-                  The most common operational follow-ups recommended by recent diagnoses.
+                  最近诊断里最常出现的建议动作。
                 </p>
               </div>
               <ul className="grid gap-3">
@@ -170,8 +170,8 @@ export default async function InsightsPage() {
 
           <section className="grid gap-4 lg:grid-cols-2">
             <BreakdownCard
-              title="Issues by site"
-              description="Where repeated diagnoses are clustering when people add location context."
+              title="按站点查看问题"
+              description="当大家填写了站点信息后，重复诊断会聚集在哪些位置。"
               items={insights.storeBreakdown.map((item) => ({
                 ...item,
                 href: buildHistoryFilterHref({
@@ -181,8 +181,8 @@ export default async function InsightsPage() {
               }))}
             />
             <BreakdownCard
-              title="Follow-up backlog"
-              description="How many diagnoses are still new, in review, accepted, or resolved."
+              title="跟进积压"
+              description="当前还有多少诊断处于待跟进、跟进中、已采纳或已解决。"
               items={insights.reviewStatusBreakdown.map((item) => ({
                 ...item,
                 label: getDiagnosisReviewStatusLabel(item.key),
@@ -196,8 +196,8 @@ export default async function InsightsPage() {
 
           <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
             <BreakdownCard
-              title="Severity mix"
-              description="A quick split between higher-risk and medium-severity diagnoses."
+              title="严重程度分布"
+              description="快速查看高优先级和中等级别问题的占比。"
               items={insights.severityBreakdown.map((item) => ({
                 ...item,
                 href: buildHistoryFilterHref({
@@ -208,10 +208,10 @@ export default async function InsightsPage() {
             />
             <div className="app-card rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface-strong)] p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
-                Context note
+                说明
               </p>
               <p className="mt-2 text-sm leading-6">
-                Role and site clustering become reliable only when interview starters consistently fill the optional intake fields.
+                只有当访谈发起人持续填写可选的站点和角色信息时，角色和站点聚类才会更可靠。
               </p>
             </div>
           </section>
@@ -220,21 +220,21 @@ export default async function InsightsPage() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                  Recent completed
+                  最近完成
                 </p>
                 <h2 className="display-title mt-1 text-2xl font-semibold">
-                  Latest structured diagnoses
+                  最新结构化诊断
                 </h2>
               </div>
               <Link href="/history" className="text-sm font-medium text-[var(--color-accent)]">
-                Open history
+                打开历史
               </Link>
             </div>
 
             <ul className="grid gap-3">
               {insights.recentCompleted.map((item) => (
                 <li key={item.id}>
-                  <Link
+                  <a
                     href={`/history/${item.id}`}
                     className="flex flex-col gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] p-4"
                   >
@@ -268,7 +268,7 @@ export default async function InsightsPage() {
                       </span>
                     </div>
                     <p className="muted text-sm">{item.diagnosisRecord.nextAction}</p>
-                  </Link>
+                  </a>
                 </li>
               ))}
             </ul>
@@ -323,7 +323,7 @@ function BreakdownCard({
       <ul className="grid gap-3">
         {items.length === 0 ? (
           <li className="rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface-strong)] p-4 text-sm leading-6 text-[var(--color-text-muted)]">
-            No grouped signal yet for this view.
+            这个视角下暂时还没有形成可分组的信号。
           </li>
         ) : (
           items.map((item) => (

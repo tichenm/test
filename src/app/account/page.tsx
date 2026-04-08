@@ -4,19 +4,21 @@ import { redirect } from "next/navigation";
 import { SignOutButton } from "@/app/account/sign-out-button";
 import { getAuthSession } from "@/lib/auth";
 import { buildLoginRedirect } from "@/lib/auth-navigation";
+import { isDirectDevAuthEnabled } from "@/lib/direct-auth";
 
 function formatTimestamp(value: Date) {
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
+  return new Intl.DateTimeFormat("zh-CN", {
     year: "numeric",
-    hour: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
   }).format(value);
 }
 
 export default async function AccountPage() {
   const session = await getAuthSession();
+  const isDirectDevAuth = isDirectDevAuthEnabled();
 
   if (!session?.user?.id) {
     redirect(buildLoginRedirect("/account"));
@@ -26,28 +28,30 @@ export default async function AccountPage() {
     <main className="flex flex-1 flex-col gap-5 pb-8 pt-4">
       <section className="space-y-2">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
-          Account
+          账户
         </p>
         <h1 className="display-title text-4xl font-semibold tracking-tight">
-          Manage your session
+          管理当前会话
         </h1>
         <p className="muted max-w-2xl text-sm leading-6">
-          Check which email is active, return to the diagnosis workspace, or sign out cleanly.
+          查看当前登录邮箱，返回诊断工作台，或安全退出登录。
         </p>
       </section>
 
       <section className="app-card flex flex-col gap-4 p-6">
         <div className="space-y-1">
-          <h2 className="display-title text-2xl font-semibold">Signed-in identity</h2>
+          <h2 className="display-title text-2xl font-semibold">当前登录身份</h2>
           <p className="muted text-sm leading-6">
-            This app uses magic-link sign-in, so the active email is the main account context.
+            {isDirectDevAuth
+              ? "当前启用了本地开发直登，页面中的邮箱来自开发态快捷登录。"
+              : "当前使用邮箱登录链接认证，登录邮箱就是本次会话的主要身份标识。"}
           </p>
         </div>
 
         <dl className="grid gap-3 sm:grid-cols-2">
-          <AccountField label="Email" value={session.user.email ?? "Not available"} />
+          <AccountField label="邮箱" value={session.user.email ?? "暂无"} />
           <AccountField
-            label="Last checked"
+            label="查看时间"
             value={formatTimestamp(new Date())}
           />
         </dl>
@@ -55,9 +59,9 @@ export default async function AccountPage() {
 
       <section className="app-card flex flex-col gap-4 p-6">
         <div className="space-y-1">
-          <h2 className="display-title text-2xl font-semibold">Session actions</h2>
+          <h2 className="display-title text-2xl font-semibold">会话操作</h2>
           <p className="muted text-sm leading-6">
-            Use these shortcuts to jump back into diagnosis work or to end the current session.
+            用下面的快捷入口回到诊断工作，或者结束当前会话。
           </p>
         </div>
 
@@ -66,15 +70,24 @@ export default async function AccountPage() {
             href="/"
             className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 text-sm font-medium"
           >
-            Open workbench
+            打开工作台
           </Link>
           <Link
             href="/history"
             className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 text-sm font-medium"
           >
-            Review history
+            查看历史
           </Link>
-          <SignOutButton />
+          {isDirectDevAuth ? (
+            <a
+              href="/api/dev-logout"
+              className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 text-sm font-semibold text-[var(--color-accent-foreground)]"
+            >
+              退出登录
+            </a>
+          ) : (
+            <SignOutButton />
+          )}
         </div>
       </section>
     </main>

@@ -4,8 +4,8 @@ import { MobileNav } from "@/components/mobile-nav";
 import { getAuthSession } from "@/lib/auth";
 
 export const metadata: Metadata = {
-  title: "Guided Pain Discovery",
-  description: "Turn fuzzy store-operation pain into a clear diagnosis.",
+  title: "引导式痛点诊断",
+  description: "把模糊的一线运营问题收敛成清晰诊断。",
 };
 
 export default async function RootLayout({
@@ -16,7 +16,7 @@ export default async function RootLayout({
   const session = await getAuthSession();
 
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="zh-CN" className="h-full antialiased">
       <body className="min-h-full bg-[var(--color-bg)] text-[var(--color-text)]">
         <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-4 pb-24 pt-4 sm:px-6">
           {children}

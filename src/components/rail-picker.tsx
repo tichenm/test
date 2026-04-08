@@ -18,33 +18,33 @@ export function RailPicker({
         <div className="grid gap-4 md:grid-cols-2">
           <div className="grid gap-2">
             <label htmlFor="storeName" className="text-sm font-semibold">
-              Store or site
+              门店或站点
             </label>
             <input
               id="storeName"
               name="storeName"
               type="text"
-              placeholder="Optional: Store 12, North hub, Shanghai flagship"
+              placeholder="选填：12号店、华北仓、上海旗舰店"
               className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm outline-none"
             />
             <p className="muted text-sm leading-6">
-              Optional context helps managers cluster repeated issues by location.
+              选填位置有助于管理者按站点聚合重复问题。
             </p>
           </div>
 
           <div className="grid gap-2">
             <label htmlFor="roleName" className="text-sm font-semibold">
-              Role or function
+              角色或职能
             </label>
             <input
               id="roleName"
               name="roleName"
               type="text"
-              placeholder="Optional: Store manager, warehouse supervisor, project lead"
+              placeholder="选填：店长、仓库主管、项目负责人"
               className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm outline-none"
             />
             <p className="muted text-sm leading-6">
-              Optional role context helps managers see which frontline functions surface the same pain.
+              选填角色有助于识别哪些一线岗位反复暴露同类痛点。
             </p>
           </div>
         </div>
@@ -69,27 +69,27 @@ export function RailPicker({
               </div>
               {isRecommended ? (
                 <span className="rounded-full bg-[var(--color-accent)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent-foreground)]">
-                  Recommended
+                  推荐
                 </span>
               ) : null}
             </div>
 
             <div className="mt-4 flex items-center justify-between gap-3">
               <span className="text-sm text-[var(--color-text-muted)]">
-                7-step guided diagnosis
+                7步引导式诊断
               </span>
               <button
                 type="submit"
                 name="railKey"
                 value={rail.key}
-                aria-label={`Start ${rail.label.toLowerCase()} diagnosis`}
+                aria-label={`开始${rail.label}诊断`}
                 className={`min-h-11 rounded-[var(--radius-md)] px-4 text-sm font-semibold ${
                   isRecommended
                     ? "bg-[var(--color-accent)] text-[var(--color-accent-foreground)]"
                     : "border border-[var(--color-border)] bg-[var(--color-surface)]"
                 }`}
               >
-                Start Diagnosis
+                开始诊断
               </button>
             </div>
           </section>

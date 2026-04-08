@@ -56,7 +56,8 @@ describe("ai helpers", () => {
 
   it("uses the OpenAI response output_text when an API key is configured", async () => {
     vi.stubEnv("OPENAI_API_KEY", "test-key");
-    vi.stubEnv("OPENAI_MODEL", "gpt-5-mini");
+    vi.stubEnv("OPENAI_MODEL", "gpt-5.4");
+    vi.stubEnv("OPENAI_REASONING_EFFORT", "high");
 
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -70,6 +71,9 @@ describe("ai helpers", () => {
     const summary = await generateDiagnosisSummary(sampleRecord);
 
     expect(summary).toBe("AI summary from the live provider.");
+    const [, requestInit] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const payload = JSON.parse(String(requestInit.body));
+
     expect(fetchMock).toHaveBeenCalledWith(
       "https://api.openai.com/v1/responses",
       expect.objectContaining({
@@ -79,6 +83,10 @@ describe("ai helpers", () => {
         }),
       }),
     );
+    expect(payload.model).toBe("gpt-5.4");
+    expect(payload.reasoning).toEqual({
+      effort: "high",
+    });
   });
 
   it("falls back to deterministic diagnosis summaries when the provider response is unusable", async () => {

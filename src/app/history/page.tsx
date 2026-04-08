@@ -25,10 +25,10 @@ type HistoryPageProps = {
 };
 
 function formatTimestamp(value: Date) {
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "numeric",
     day: "numeric",
-    hour: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
   }).format(value);
 }
@@ -61,64 +61,63 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
     <main className="flex flex-1 flex-col gap-5 pb-8 pt-4">
       <section className="space-y-2">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
-          History
+          历史
         </p>
         <h1 className="display-title text-4xl font-semibold tracking-tight">
-          Review prior diagnoses
+          回看历史诊断
         </h1>
         <p className="muted max-w-2xl text-sm leading-6">
-          Open a completed diagnosis to review the issue statement, the next
-          action, and the original conversation that led there.
+          打开任一已完成诊断，回看问题定义、建议动作，以及原始问答过程。
         </p>
       </section>
 
       <section className="app-card flex flex-col gap-4 p-6">
         <div className="space-y-1">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-            Filter workspace
+            筛选工作区
           </p>
           <h2 className="display-title text-2xl font-semibold">
-            Narrow the backlog to one operating slice
+            把积压问题收敛到一个运营切片
           </h2>
           <p className="muted text-sm leading-6">
-            Filter by workflow, pain type, owner context, and keyword to find the diagnoses that need attention now.
+            按流程、痛点类型、负责人上下文和关键词筛选，快速找到当前最需要处理的诊断。
           </p>
         </div>
 
         <form method="get" className="grid gap-4">
           <div className="grid gap-4 lg:grid-cols-[1.6fr_0.8fr_0.8fr]">
             <label className="grid gap-2 text-sm font-medium">
-              Keyword
+              关键词
               <input
                 type="search"
                 name="q"
                 defaultValue={filters.query}
-                placeholder="Store, role, next action, note, owner"
+                placeholder="门店、角色、下一步动作、备注、负责人"
                 className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] px-4"
               />
             </label>
 
             <label className="grid gap-2 text-sm font-medium">
-              Session status
+              会话状态
               <select
                 name="status"
                 defaultValue={filters.status}
                 className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] px-4"
               >
-                <option value="all">All sessions</option>
-                <option value="active">Active drafts</option>
-                <option value="completed">Completed diagnoses</option>
+                <option value="all">全部会话</option>
+                <option value="active">进行中的草稿</option>
+                <option value="completed">已完成诊断</option>
               </select>
             </label>
 
             <label className="grid gap-2 text-sm font-medium">
-              Workflow
+              诊断流程
               <select
                 name="railKey"
                 defaultValue={filters.railKey}
                 className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] px-4"
               >
-                <option value="all">All workflows</option>
+                <option value="all">全部流程</option>
                 {rails.map((rail) => (
                   <option key={rail.key} value={rail.key}>
                     {rail.label}
@@ -130,28 +129,28 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
 
           <div className="grid gap-4 lg:grid-cols-4">
             <label className="grid gap-2 text-sm font-medium">
-              Review status
+              跟进状态
               <select
                 name="reviewStatus"
                 defaultValue={filters.reviewStatus}
                 className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] px-4"
               >
-                <option value="all">All review stages</option>
-                <option value="new">New</option>
-                <option value="reviewing">Reviewing</option>
-                <option value="accepted">Accepted</option>
-                <option value="resolved">Resolved</option>
+                <option value="all">全部阶段</option>
+                <option value="new">待跟进</option>
+                <option value="reviewing">跟进中</option>
+                <option value="accepted">已采纳</option>
+                <option value="resolved">已解决</option>
               </select>
             </label>
 
             <label className="grid gap-2 text-sm font-medium">
-              Pain type
+              痛点类型
               <select
                 name="painType"
                 defaultValue={filters.painType}
                 className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] px-4"
               >
-                <option value="all">All pain types</option>
+                <option value="all">全部痛点类型</option>
                 {DIAGNOSIS_PAIN_TYPES.map((painType) => (
                   <option key={painType} value={painType}>
                     {getDiagnosisPainTypeLabel(painType)}
@@ -161,13 +160,13 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
             </label>
 
             <label className="grid gap-2 text-sm font-medium">
-              Site
+              站点
               <select
                 name="storeName"
                 defaultValue={filters.storeName}
                 className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] px-4"
               >
-                <option value="">All sites</option>
+                <option value="">全部站点</option>
                 {filterOptions.storeNames.map((storeName) => (
                   <option key={storeName} value={storeName}>
                     {storeName}
@@ -177,13 +176,13 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
             </label>
 
             <label className="grid gap-2 text-sm font-medium">
-              Role
+              角色
               <select
                 name="roleName"
                 defaultValue={filters.roleName}
                 className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] px-4"
               >
-                <option value="">All roles</option>
+                <option value="">全部角色</option>
                 {filterOptions.roleNames.map((roleName) => (
                   <option key={roleName} value={roleName}>
                     {roleName}
@@ -195,26 +194,26 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-[var(--color-text-muted)]">
-              Showing {filteredInterviews.length} of {interviews.length} sessions.
+              当前显示 {filteredInterviews.length} / {interviews.length} 条会话。
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
                 href="/history"
                 className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 text-sm font-medium"
               >
-                Clear filters
+                清空筛选
               </Link>
               <Link
                 href={buildHistoryExportHref(filters)}
                 className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 text-sm font-medium"
               >
-                Export current view
+                导出当前视图
               </Link>
               <button
                 type="submit"
                 className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 text-sm font-semibold text-[var(--color-accent-foreground)]"
               >
-                Apply filters
+                应用筛选
               </button>
             </div>
           </div>
@@ -224,7 +223,7 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
       {interviews.length === 0 ? (
         <section className="app-card p-6">
           <h2 className="display-title text-2xl font-semibold">
-            You do not have any diagnosis records yet.
+            你还没有任何诊断记录。
           </h2>
           <p className="muted mt-2 text-sm leading-6">
             {getEmptyHistoryCopy()}
@@ -233,38 +232,38 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
             href="/"
             className="mt-4 inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-accent-foreground)]"
           >
-            Start New Diagnosis
+            开始新诊断
           </Link>
         </section>
       ) : filteredInterviews.length === 0 ? (
         <section className="app-card flex flex-col gap-3 p-6">
           <h2 className="display-title text-2xl font-semibold">
-            No diagnoses match the current filters.
+            当前筛选条件下没有匹配的诊断。
           </h2>
           <p className="muted text-sm leading-6">
             {hasActiveFilters
-              ? "Clear one or more filters and widen the slice you are reviewing."
-              : "Start a diagnosis to build the backlog."}
+              ? "放宽一个或多个筛选条件，扩大你正在查看的问题范围。"
+              : "先开始一次诊断，逐步建立你的问题积压池。"}
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
               href="/history"
               className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 text-sm font-medium"
             >
-              Reset filters
+              重置筛选
             </Link>
             <Link
               href="/"
               className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-accent-foreground)]"
             >
-              Start New Diagnosis
+              开始新诊断
             </Link>
           </div>
         </section>
       ) : (
         <section className="grid gap-3">
           {filteredInterviews.map((item) => (
-            <Link
+            <a
               key={item.id}
               href={item.status === "COMPLETED" ? `/history/${item.id}` : `/interview/${item.id}`}
               className="app-card flex flex-col gap-3 p-5"
@@ -272,7 +271,7 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
               <div className="flex items-center justify-between gap-3">
                 <div className="flex flex-col gap-1">
                   <span className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
-                    {item.status === "COMPLETED" ? "Completed" : "Active draft"}
+                    {item.status === "COMPLETED" ? "已完成" : "进行中的草稿"}
                   </span>
                   {item.status === "COMPLETED" && item.diagnosisRecord ? (
                     <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
@@ -305,9 +304,9 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
               </h2>
               <p className="muted text-sm leading-6">
                 {item.diagnosisRecord?.nextAction ||
-                  "Continue the guided review to reach a structured diagnosis."}
+                  "继续完成引导式问答，收敛出结构化诊断。"}
               </p>
-            </Link>
+            </a>
           ))}
         </section>
       )}

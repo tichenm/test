@@ -35,10 +35,10 @@ describe("MobileNav", () => {
 
     render(<MobileNav isAuthenticated />);
 
-    expect(screen.getByText("Home")).toBeInTheDocument();
-    expect(screen.getByText("Insights")).toBeInTheDocument();
-    expect(screen.getByText("History")).toBeInTheDocument();
-    expect(screen.getByText("Account")).toBeInTheDocument();
-    expect(screen.getByText("Account").className).toContain("bg-[var(--color-accent)]");
+    expect(screen.getByText("工作台")).toBeInTheDocument();
+    expect(screen.getByText("洞察")).toBeInTheDocument();
+    expect(screen.getByText("历史")).toBeInTheDocument();
+    expect(screen.getByText("账户")).toBeInTheDocument();
+    expect(screen.getByText("账户").className).toContain("bg-[var(--color-accent)]");
   });
 });

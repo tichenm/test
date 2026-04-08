@@ -8,7 +8,9 @@ real pain lives.
 ## Current Product Slice
 
 - Guided diagnosis flow with rail-specific questioning
+- Dedicated rails for inventory, warehouse receiving, store stock control, store service complaints, and project handoff workflows
 - Email magic-link auth with NextAuth
+- Direct dev login path for local QA without waiting on email
 - Prisma persistence for interview sessions, transcripts, and diagnoses
 - Optional OpenAI rewriting layer with deterministic fallback
 - History, diagnosis detail, and aggregated insights views
@@ -63,6 +65,7 @@ npm run db:start
 npm run db:stop
 npm run prisma:status
 npm run smoke:local
+python3 scripts/smoke_local_flow.py --rail-key store-service-complaints
 python3 scripts/smoke_local_flow.py --help
 ```
 

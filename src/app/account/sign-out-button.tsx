@@ -20,7 +20,7 @@ export function SignOutButton() {
       disabled={isPending}
       className="min-h-11 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 text-sm font-semibold text-[var(--color-accent-foreground)] disabled:opacity-70"
     >
-      {isPending ? "Signing out..." : "Sign out"}
+      {isPending ? "正在退出..." : "退出登录"}
     </button>
   );
 }

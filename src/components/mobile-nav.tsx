@@ -8,10 +8,10 @@ type MobileNavProps = {
 };
 
 const items = [
-  { href: "/", label: "Home" },
-  { href: "/insights", label: "Insights" },
-  { href: "/history", label: "History" },
-  { href: "/account", label: "Account" },
+  { href: "/", label: "工作台" },
+  { href: "/insights", label: "洞察" },
+  { href: "/history", label: "历史" },
+  { href: "/account", label: "账户" },
 ];
 
 export function MobileNav({ isAuthenticated }: MobileNavProps) {

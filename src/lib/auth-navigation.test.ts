@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildLoginRedirect,
   normalizeCallbackPath,
+  resolveRequestOrigin,
   resolveLoginCallbackUrl,
   resolveTrustedRedirectUrl,
   rewriteVerificationUrlToCallbackOrigin,
@@ -39,6 +40,29 @@ describe("auth navigation", () => {
     expect(
       resolveLoginCallbackUrl(undefined, "http://127.0.0.1:3000"),
     ).toBe("http://127.0.0.1:3000/");
+  });
+
+  it("prefers forwarded or host headers when reconstructing the request origin", () => {
+    expect(
+      resolveRequestOrigin(
+        new Request("http://localhost:3000/api/dev-login", {
+          headers: {
+            host: "127.0.0.1:3000",
+          },
+        }),
+      ),
+    ).toBe("http://127.0.0.1:3000");
+
+    expect(
+      resolveRequestOrigin(
+        new Request("http://localhost:3000/api/dev-login", {
+          headers: {
+            "x-forwarded-proto": "https",
+            "x-forwarded-host": "demo.example.com",
+          },
+        }),
+      ),
+    ).toBe("https://demo.example.com");
   });
 
   it("rewrites verification links to the callback origin when hosts differ", () => {

@@ -13,6 +13,18 @@ describe("diagnostic engine", () => {
     expect(getCurrentStepDefinition(state).field).toBe("painType");
   });
 
+  it("exposes quick symptom choices for rails that define first-step options", () => {
+    const state = createInterviewState("store-service-complaints" as never);
+    const step = getCurrentStepDefinition(state);
+
+    expect(step.field).toBe("painType");
+    expect(step.suggestedAnswers).toEqual([
+      { label: "等待太久", value: "service-delay" },
+      { label: "解释不一致", value: "service-inconsistency" },
+      { label: "服务动作接不上", value: "handoff-delay" },
+    ]);
+  });
+
   it("does not advance when the current step field is still missing", () => {
     const initial = createInterviewState("inventory-replenishment");
 
@@ -31,7 +43,7 @@ describe("diagnostic engine", () => {
 
     expect(afterSymptom.currentStep).toBe("frequency-pattern");
     expect(getCurrentStepDefinition(afterSymptom).prompt(afterSymptom)).toContain(
-      "run out of stock",
+      "缺货通常多久发生一次",
     );
   });
 
@@ -63,8 +75,8 @@ describe("diagnostic engine", () => {
       peopleInvolved: "shift leads",
       currentWorkaround: "manual Slack reminders",
       operationalImpact: "missed weekend sales and rushed transfers",
-      likelyRootCause: expect.stringContaining("handoff"),
-      nextAction: expect.stringContaining("handoff"),
+      likelyRootCause: expect.stringContaining("补货交接过晚"),
+      nextAction: expect.stringContaining("补货交接"),
     });
   });
 
@@ -77,7 +89,7 @@ describe("diagnostic engine", () => {
 
     expect(afterSymptom.currentStep).toBe("frequency-pattern");
     expect(getCurrentStepDefinition(afterSymptom).prompt(afterSymptom)).toContain(
-      "inbound",
+      "到货库存还没上架入位就开始堆积",
     );
   });
 
@@ -101,8 +113,8 @@ describe("diagnostic engine", () => {
     expect(record).toMatchObject({
       painType: "overstock",
       severity: "medium",
-      likelyRootCause: expect.stringContaining("putaway"),
-      nextAction: expect.stringContaining("receiving"),
+      likelyRootCause: expect.stringContaining("收货到入位之间缺少清晰交接"),
+      nextAction: expect.stringContaining("收货到入位责任分工"),
     });
   });
 
@@ -115,7 +127,7 @@ describe("diagnostic engine", () => {
 
     expect(afterSymptom.currentStep).toBe("frequency-pattern");
     expect(getCurrentStepDefinition(afterSymptom).prompt(afterSymptom)).toContain(
-      "empty shelf",
+      "门店货架空掉或可售库存缺失",
     );
   });
 
@@ -143,8 +155,8 @@ describe("diagnostic engine", () => {
     expect(record).toMatchObject({
       painType: "stockout",
       severity: "high",
-      likelyRootCause: expect.stringContaining("shared"),
-      nextAction: expect.stringContaining("trace"),
+      likelyRootCause: expect.stringContaining("共同导致"),
+      nextAction: expect.stringContaining("一路追到门店上架执行"),
     });
   });
 
@@ -172,8 +184,8 @@ describe("diagnostic engine", () => {
     expect(record).toMatchObject({
       painType: "inventory-accuracy",
       severity: "medium",
-      likelyRootCause: expect.stringContaining("store execution issue"),
-      nextAction: expect.stringContaining("shelf-check"),
+      likelyRootCause: expect.stringContaining("门店执行问题"),
+      nextAction: expect.stringContaining("货架检查"),
     });
   });
 
@@ -201,8 +213,8 @@ describe("diagnostic engine", () => {
     expect(record).toMatchObject({
       painType: "stockout",
       severity: "high",
-      likelyRootCause: expect.stringContaining("HQ or system issue"),
-      nextAction: expect.stringContaining("compare store sell-through"),
+      likelyRootCause: expect.stringContaining("上游或系统问题"),
+      nextAction: expect.stringContaining("对比门店真实销量"),
     });
   });
 
@@ -215,8 +227,50 @@ describe("diagnostic engine", () => {
 
     expect(afterSymptom.currentStep).toBe("frequency-pattern");
     expect(getCurrentStepDefinition(afterSymptom).prompt(afterSymptom)).toContain(
-      "counts drift",
+      "系统盘点和货架或后仓实物对不上",
     );
+  });
+
+  it("uses service-experience wording for store service complaint interviews", () => {
+    const initial = createInterviewState("store-service-complaints" as never);
+
+    const afterSymptom = advanceInterview(initial, {
+      painType: "service-delay" as never,
+    }).state;
+
+    expect(afterSymptom.currentStep).toBe("frequency-pattern");
+    expect(getCurrentStepDefinition(afterSymptom).prompt(afterSymptom)).toContain(
+      "顾客等待明显变长",
+    );
+  });
+
+  it("builds service rail diagnosis copy around service handoff gaps", () => {
+    let state = createInterviewState("store-service-complaints" as never);
+
+    state = advanceInterview(state, { painType: "handoff-delay" as never }).state;
+    state = advanceInterview(state, { frequency: "每个周末晚高峰" }).state;
+    state = advanceInterview(state, { timeWindow: "晚高峰和交接班前后" }).state;
+    state = advanceInterview(state, {
+      affectedScope: "点单到出餐之间的顾客解释和排队安抚",
+    }).state;
+    state = advanceInterview(state, {
+      peopleInvolved: "收银、出餐伙伴和值班店长",
+    }).state;
+    state = advanceInterview(state, {
+      currentWorkaround: "店长临时顶到前场统一解释并安抚顾客",
+    }).state;
+    const completion = advanceInterview(state, {
+      operationalImpact: "顾客等待更久，差评和投诉在高峰后集中出现",
+    });
+
+    const record = buildDiagnosisRecord(completion.state);
+
+    expect(record).toMatchObject({
+      painType: "handoff-delay",
+      severity: "high",
+      likelyRootCause: expect.stringContaining("服务链路"),
+      nextAction: expect.stringContaining("交接"),
+    });
   });
 
   it("builds rail-specific diagnosis copy for store inventory control interviews", () => {
@@ -243,8 +297,8 @@ describe("diagnostic engine", () => {
     expect(record).toMatchObject({
       painType: "inventory-accuracy",
       severity: "medium",
-      likelyRootCause: expect.stringContaining("inventory control"),
-      nextAction: expect.stringContaining("cycle count"),
+      likelyRootCause: expect.stringContaining("库存管控"),
+      nextAction: expect.stringContaining("下一次盘点"),
     });
   });
 
@@ -257,7 +311,7 @@ describe("diagnostic engine", () => {
 
     expect(afterSymptom.currentStep).toBe("frequency-pattern");
     expect(getCurrentStepDefinition(afterSymptom).prompt(afterSymptom)).toContain(
-      "handoff stalls",
+      "交接卡住",
     );
   });
 
@@ -285,8 +339,8 @@ describe("diagnostic engine", () => {
     expect(record).toMatchObject({
       painType: "handoff-delay",
       severity: "high",
-      likelyRootCause: expect.stringContaining("handoff"),
-      nextAction: expect.stringContaining("handoff owner"),
+      likelyRootCause: expect.stringContaining("项目交接会卡住"),
+      nextAction: expect.stringContaining("明确交接负责人"),
     });
   });
 });

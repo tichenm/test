@@ -7,6 +7,17 @@ matters, and whether they need to do anything.
 
 ## Unreleased
 
+### Added
+
+- Dedicated `store-service-complaints` rail for peak-hour service experience and complaint diagnosis
+- Local smoke coverage for the service-complaint rail, including history and insights visibility checks
+
+### Changed
+
+- Login now defaults to direct dev entry in local mode so browser QA does not depend on email delivery
+- The service-complaint rail now normalizes Chinese first-step symptom answers into canonical internal pain types
+- Local smoke now verifies canonical pain type persistence across session state, interview messages, and diagnosis records
+
 ## [0.1.0.0] - 2026-04-06
 
 ### Added

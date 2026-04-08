@@ -1,5 +1,6 @@
 import {
   getDiagnosisPainTypeLabel,
+  getDiagnosisSeverityLabel,
   getInterviewRailLabel,
 } from "@/lib/interview-presenters";
 
@@ -113,7 +114,7 @@ export function buildInterviewInsights(sessions: InsightSession[]): InterviewIns
     },
     railBreakdown: sortBucketsDescending(railCounts, getInterviewRailLabel),
     painTypeBreakdown,
-    severityBreakdown: sortBucketsDescending(severityCounts),
+    severityBreakdown: sortBucketsDescending(severityCounts, getDiagnosisSeverityLabel),
     storeBreakdown: sortBucketsDescending(storeCounts),
     roleBreakdown: sortBucketsDescending(roleCounts),
     reviewStatusBreakdown: sortBucketsDescending(reviewStatusCounts),

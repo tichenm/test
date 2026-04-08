@@ -21,10 +21,10 @@ import {
 } from "@/lib/interview-presenters";
 
 function formatTimestamp(value: Date) {
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "numeric",
     day: "numeric",
-    hour: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
   }).format(value);
 }
@@ -72,10 +72,10 @@ export default async function HomePage() {
       <section className="app-card flex flex-col gap-6 p-6 sm:p-8">
         <div className="space-y-3">
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
-            Workbench
+            工作台
           </p>
           <h1 className="display-title text-4xl font-semibold tracking-tight sm:text-5xl">
-            Start a diagnosis before the floor starts guessing.
+            先做诊断，再避免一线靠猜。
           </h1>
           <p className="muted max-w-2xl text-base leading-7">
             {defaultRail.workbenchSummary}
@@ -94,28 +94,27 @@ export default async function HomePage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                Continue draft
+                继续草稿
               </p>
               <h2 className="display-title mt-1 text-2xl font-semibold">
-                You have an unfinished diagnosis in progress.
+                你有一个未完成的诊断正在进行中。
               </h2>
             </div>
             <span className="rounded-full bg-[var(--color-surface-strong)] px-3 py-2 text-sm text-[var(--color-text-muted)]">
-              Active
+              进行中
             </span>
           </div>
 
           <p className="muted text-sm leading-6">
-            Started {formatTimestamp(draft.startedAt)}. Pick it up and keep the
-            thread focused.
+            开始于 {formatTimestamp(draft.startedAt)}。继续补充，让问题继续收敛。
           </p>
 
-          <Link
+          <a
             href={`/interview/${draft.id}`}
             className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] px-4 text-sm font-medium"
           >
-            Continue Draft
-          </Link>
+            继续填写
+          </a>
         </section>
       ) : null}
 
@@ -123,18 +122,18 @@ export default async function HomePage() {
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-              Recent diagnoses
+              最近诊断
             </p>
             <h2 className="display-title mt-1 text-2xl font-semibold">
-              Diagnosis history
+              诊断历史
             </h2>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/insights" className="text-sm font-medium text-[var(--color-accent)]">
-              Insights
+              洞察
             </Link>
             <Link href="/history" className="text-sm font-medium text-[var(--color-accent)]">
-              View all
+              查看全部
             </Link>
           </div>
         </div>
@@ -144,17 +143,17 @@ export default async function HomePage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
-                  Manager shortcut
+                  管理捷径
                 </p>
                 <p className="mt-1 text-sm leading-6">
-                  Open the insights board to spot repeated pain types, workflow clusters, and common next actions.
+                  打开洞察面板，快速查看重复痛点、流程聚类和高频下一步动作。
                 </p>
               </div>
               <Link
                 href="/insights"
                 className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 text-sm font-medium"
               >
-                Open Insights
+                打开洞察
               </Link>
             </div>
           </div>
@@ -163,7 +162,7 @@ export default async function HomePage() {
         {recent.length === 0 ? (
           <div className="rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface-strong)] p-5">
             <h3 className="display-title text-xl font-semibold">
-              You do not have any diagnosis records yet.
+              你还没有任何诊断记录。
             </h3>
             <p className="muted mt-2 text-sm leading-6">
               {getEmptyHistoryCopy()}
@@ -173,7 +172,7 @@ export default async function HomePage() {
           <ul className="grid gap-3">
             {recent.map((item) => (
               <li key={item.id}>
-                <Link
+                <a
                   href={`/history/${item.id}`}
                   className="flex flex-col gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-strong)] p-4"
                 >
@@ -204,9 +203,9 @@ export default async function HomePage() {
                     </span>
                   </div>
                   <p className="muted text-sm">
-                    {item.diagnosisRecord?.nextAction || "Review the latest diagnosis."}
+                    {item.diagnosisRecord?.nextAction || "查看最新诊断结论。"}
                   </p>
-                </Link>
+                </a>
               </li>
             ))}
           </ul>

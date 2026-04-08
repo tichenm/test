@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const buildLoginRedirectMock = vi.fn();
+const resolveRequestOriginMock = vi.fn();
 const buildHistoryExportCsvMock = vi.fn();
 const buildHistoryExportFilenameMock = vi.fn();
 const filterInterviewSessionsMock = vi.fn();
@@ -10,6 +11,7 @@ const listInterviewSessionsForUserMock = vi.fn();
 
 vi.mock("@/lib/auth-navigation", () => ({
   buildLoginRedirect: (...args: unknown[]) => buildLoginRedirectMock(...args),
+  resolveRequestOrigin: (...args: unknown[]) => resolveRequestOriginMock(...args),
 }));
 
 vi.mock("@/lib/history-export", () => ({
@@ -35,6 +37,7 @@ import { GET } from "@/app/history/export/route";
 describe("history export route", () => {
   beforeEach(() => {
     buildLoginRedirectMock.mockReset();
+    resolveRequestOriginMock.mockReset();
     buildHistoryExportCsvMock.mockReset();
     buildHistoryExportFilenameMock.mockReset();
     filterInterviewSessionsMock.mockReset();
@@ -48,15 +51,21 @@ describe("history export route", () => {
     buildLoginRedirectMock.mockReturnValue(
       "/login?callbackUrl=%2Fhistory%2Fexport%3Fstatus%3Dcompleted%26q%3DStore%2B12&reason=auth",
     );
+    resolveRequestOriginMock.mockReturnValue("http://127.0.0.1:3000");
 
     const response = await GET(
-      new Request("http://localhost:3000/history/export?status=completed&q=Store+12"),
+      new Request("http://localhost:3000/history/export?status=completed&q=Store+12", {
+        headers: {
+          host: "127.0.0.1:3000",
+        },
+      }),
     );
 
     expect(response.status).toBe(302);
     expect(buildLoginRedirectMock).toHaveBeenCalledWith("/history/export?status=completed&q=Store+12");
+    expect(resolveRequestOriginMock).toHaveBeenCalled();
     expect(response.headers.get("location")).toBe(
-      "http://localhost:3000/login?callbackUrl=%2Fhistory%2Fexport%3Fstatus%3Dcompleted%26q%3DStore%2B12&reason=auth",
+      "http://127.0.0.1:3000/login?callbackUrl=%2Fhistory%2Fexport%3Fstatus%3Dcompleted%26q%3DStore%2B12&reason=auth",
     );
   });
 
@@ -77,7 +86,7 @@ describe("history export route", () => {
     listInterviewSessionsForUserMock.mockResolvedValue(sessions);
     filterInterviewSessionsMock.mockReturnValue(sessions);
     buildHistoryExportCsvMock.mockReturnValue("Session ID\nsession-1");
-    buildHistoryExportFilenameMock.mockReturnValue("guided-pain-history-2026-04-06.csv");
+    buildHistoryExportFilenameMock.mockReturnValue("pain-history-2026-04-06.csv");
 
     const response = await GET(
       new Request(
@@ -97,7 +106,7 @@ describe("history export route", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(response.headers.get("content-type")).toBe("text/csv; charset=utf-8");
     expect(response.headers.get("content-disposition")).toBe(
-      'attachment; filename="guided-pain-history-2026-04-06.csv"',
+      'attachment; filename="pain-history-2026-04-06.csv"',
     );
     expect(await response.text()).toBe("Session ID\nsession-1");
   });

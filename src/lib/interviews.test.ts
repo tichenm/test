@@ -56,7 +56,7 @@ describe("interview services", () => {
 
     expect(created).toEqual({ id: "session-1" });
     expect(generateGuidedQuestionMock).toHaveBeenCalledWith(
-      expect.stringContaining("What is going wrong most often"),
+      expect.stringContaining("最常出问题的是哪一类"),
       expect.objectContaining({
         currentStep: "problem-symptom",
         railKey: "inventory-replenishment",
@@ -89,7 +89,7 @@ describe("interview services", () => {
     await createInterviewSessionForUser("user-1", "warehouse-receiving");
 
     expect(generateGuidedQuestionMock).toHaveBeenCalledWith(
-      expect.stringContaining("In receiving"),
+      expect.stringContaining("在收货环节"),
       expect.objectContaining({
         railKey: "warehouse-receiving",
       }),
@@ -112,7 +112,7 @@ describe("interview services", () => {
     await createInterviewSessionForUser("user-1", "store-stock-replenishment" as never);
 
     expect(generateGuidedQuestionMock).toHaveBeenCalledWith(
-      expect.stringContaining("In the store"),
+      expect.stringContaining("在门店里"),
       expect.objectContaining({
         railKey: "store-stock-replenishment",
       }),
@@ -135,7 +135,7 @@ describe("interview services", () => {
     await createInterviewSessionForUser("user-1", "store-inventory-control" as never);
 
     expect(generateGuidedQuestionMock).toHaveBeenCalledWith(
-      expect.stringContaining("what goes wrong most often"),
+      expect.stringContaining("最常出问题的是哪一类"),
       expect.objectContaining({
         railKey: "store-inventory-control",
       }),
@@ -158,7 +158,7 @@ describe("interview services", () => {
     await createInterviewSessionForUser("user-1", "project-rollout-handoff" as never);
 
     expect(generateGuidedQuestionMock).toHaveBeenCalledWith(
-      expect.stringContaining("project rollout"),
+      expect.stringContaining("在项目落地过程中"),
       expect.objectContaining({
         railKey: "project-rollout-handoff",
       }),
@@ -169,6 +169,29 @@ describe("interview services", () => {
           railKey: "project-rollout-handoff",
           state: expect.objectContaining({
             railKey: "project-rollout-handoff",
+          }),
+        }),
+      }),
+    );
+  });
+
+  it("creates a store service complaint session for peak-hour service breakdowns", async () => {
+    prismaMock.interviewSession.create.mockResolvedValue({ id: "session-store-service" });
+
+    await createInterviewSessionForUser("user-1", "store-service-complaints" as never);
+
+    expect(generateGuidedQuestionMock).toHaveBeenCalledWith(
+      expect.stringContaining("高峰期最常让顾客不满"),
+      expect.objectContaining({
+        railKey: "store-service-complaints",
+      }),
+    );
+    expect(prismaMock.interviewSession.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          railKey: "store-service-complaints",
+          state: expect.objectContaining({
+            railKey: "store-service-complaints",
           }),
         }),
       }),
@@ -240,7 +263,7 @@ describe("interview services", () => {
       },
     });
     expect(generateGuidedQuestionMock).toHaveBeenLastCalledWith(
-      expect.stringContaining("How often do you run out of stock"),
+      expect.stringContaining("缺货通常多久发生一次"),
       expect.objectContaining({
         currentStep: "frequency-pattern",
       }),
@@ -254,6 +277,48 @@ describe("interview services", () => {
       },
     });
     expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
+  });
+
+  it("normalizes a Chinese symptom answer into the canonical pain type before advancing", async () => {
+    const state = createInterviewState("store-service-complaints" as never);
+
+    prismaMock.interviewSession.findFirst.mockResolvedValue({
+      id: "session-service-1",
+      userId: "user-1",
+      state,
+      status: "ACTIVE",
+      messages: [],
+      diagnosisRecord: null,
+    });
+    prismaMock.interviewMessage.create.mockResolvedValue({ id: "message-service-1" });
+    prismaMock.interviewSession.update.mockResolvedValue({ id: "session-service-1" });
+
+    const result = await submitInterviewAnswer({
+      userId: "user-1",
+      sessionId: "session-service-1",
+      answer: " 等待太久 ",
+    });
+
+    expect(result).toEqual({ status: "active" });
+    expect(prismaMock.interviewMessage.create).toHaveBeenNthCalledWith(1, {
+      data: {
+        sessionId: "session-service-1",
+        role: MessageRole.USER,
+        stepKey: "problem-symptom",
+        content: "service-delay",
+      },
+    });
+    expect(prismaMock.interviewSession.update).toHaveBeenCalledWith({
+      where: { id: "session-service-1" },
+      data: {
+        state: expect.objectContaining({
+          currentStep: "frequency-pattern",
+          fields: expect.objectContaining({
+            painType: "service-delay",
+          }),
+        }),
+      },
+    });
   });
 
   it("completes the interview and persists the diagnosis record on the final answer", async () => {

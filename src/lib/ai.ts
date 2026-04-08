@@ -1,9 +1,18 @@
 import type { DiagnosisRecord } from "@/lib/diagnosis-schema";
 import type { InterviewState } from "@/lib/diagnostic-engine";
+import { getDiagnosisPainTypeLabel } from "@/lib/interview-presenters";
 
 type OpenAIResponsePayload = {
   output_text?: string;
 };
+
+function getOpenAIModel() {
+  return process.env.OPENAI_MODEL || "gpt-5.4";
+}
+
+function getOpenAIReasoningEffort() {
+  return process.env.OPENAI_REASONING_EFFORT || "high";
+}
 
 export function renderGuidedQuestion(
   basePrompt: string,
@@ -11,18 +20,18 @@ export function renderGuidedQuestion(
 ): string {
   const prefix =
     state.currentStep === "problem-symptom"
-      ? "Let's pin down the issue first."
-      : "Good, that helps. One more thing:";
+      ? "我们先把问题说具体。"
+      : "好，这个信息有帮助。再补充一点：";
 
   return `${prefix} ${basePrompt}`;
 }
 
 export function renderDiagnosisSummary(record: DiagnosisRecord): string {
   return [
-    `The main issue is ${record.painType.replace("-", " ")} affecting ${record.affectedScope}.`,
-    `It is showing up ${record.frequency}, most often around ${record.timeWindow}.`,
-    `The likely root cause is ${record.likelyRootCause.toLowerCase()}`,
-    `Start with this: ${record.nextAction}`,
+    `当前最核心的问题是${record.affectedScope}出现了${getDiagnosisPainTypeLabel(record.painType)}。`,
+    `它会在${record.frequency}出现，主要集中在${record.timeWindow}。`,
+    `目前判断的根因是：${record.likelyRootCause}`,
+    `建议先从这里开始：${record.nextAction}`,
   ].join(" ");
 }
 
@@ -47,7 +56,10 @@ async function generateOpenAIText(params: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: process.env.OPENAI_MODEL || "gpt-5-mini",
+          model: getOpenAIModel(),
+          reasoning: {
+            effort: getOpenAIReasoningEffort(),
+          },
           instructions: params.instructions,
           input: params.input,
         }),
@@ -74,7 +86,7 @@ export async function generateGuidedQuestion(
 
   return generateOpenAIText({
     instructions:
-      "Rewrite the guided interview question so it feels warm, concrete, and professional. Keep it to one short question. Do not add bullets or markdown.",
+      "把引导式访谈问题改写成自然、具体、专业的简短中文问题。不要使用项目符号，也不要使用 markdown。",
     input: [
       `Rail: ${state.railKey}`,
       `Current step: ${state.currentStep}`,
@@ -90,7 +102,7 @@ export async function generateDiagnosisSummary(record: DiagnosisRecord) {
 
   return generateOpenAIText({
     instructions:
-      "Rewrite the diagnosis into 3 concise sentences for an operations manager. Keep the root cause and the next action explicit. Do not use markdown or lists.",
+      "把诊断改写成适合运营管理者阅读的三句简洁中文总结。明确写出根因和下一步动作。不要使用 markdown 或列表。",
     input: JSON.stringify(record),
     fallback,
   });

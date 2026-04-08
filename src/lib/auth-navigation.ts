@@ -32,6 +32,47 @@ export function resolveLoginCallbackUrl(
   return new URL(normalizeCallbackPath(callbackPath), origin).toString();
 }
 
+function getFirstHeaderValue(value: string | null) {
+  return value?.split(",")[0]?.trim() || null;
+}
+
+export function resolveRequestOrigin(request: Request) {
+  const requestUrl = new URL(request.url);
+  const forwardedProto = getFirstHeaderValue(
+    request.headers.get("x-forwarded-proto"),
+  );
+  const forwardedHost = getFirstHeaderValue(
+    request.headers.get("x-forwarded-host"),
+  );
+  const host = forwardedHost || getFirstHeaderValue(request.headers.get("host"));
+
+  if (host) {
+    return `${forwardedProto || requestUrl.protocol.replace(":", "")}://${host}`;
+  }
+
+  const origin = getFirstHeaderValue(request.headers.get("origin"));
+
+  if (origin) {
+    try {
+      return new URL(origin).origin;
+    } catch {
+      // Ignore malformed headers and fall through to the request URL origin.
+    }
+  }
+
+  const referer = getFirstHeaderValue(request.headers.get("referer"));
+
+  if (referer) {
+    try {
+      return new URL(referer).origin;
+    } catch {
+      // Ignore malformed headers and fall through to the request URL origin.
+    }
+  }
+
+  return requestUrl.origin;
+}
+
 function isLoopbackOrigin(value: URL) {
   return value.hostname === "localhost" || value.hostname === "127.0.0.1";
 }

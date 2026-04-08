@@ -32,15 +32,15 @@ describe("diagnosis handoff", () => {
       },
     });
 
-    expect(brief).toContain("Guided Pain Discovery Handoff");
-    expect(brief).toContain("Workflow: Warehouse receiving");
-    expect(brief).toContain("Site: North Hub");
-    expect(brief).toContain("Role: Warehouse supervisor");
-    expect(brief).toContain("Pain type: Overstock");
-    expect(brief).toContain("Review status: Reviewing");
-    expect(brief).toContain("Owner: Kai");
-    expect(brief).toContain("Review note: Pilot the new handoff on Tuesday morning.");
-    expect(brief).toContain("Summary: Receiving is backing up at Dock 3");
+    expect(brief).toContain("引导式痛点诊断交接摘要");
+    expect(brief).toContain("诊断流程：仓库收货");
+    expect(brief).toContain("站点：North Hub");
+    expect(brief).toContain("角色：Warehouse supervisor");
+    expect(brief).toContain("痛点类型：积压");
+    expect(brief).toContain("跟进状态：跟进中");
+    expect(brief).toContain("负责人：Kai");
+    expect(brief).toContain("跟进备注：Pilot the new handoff on Tuesday morning.");
+    expect(brief).toContain("总结：Receiving is backing up at Dock 3");
   });
 
   it("falls back cleanly when optional management fields are missing", () => {
@@ -68,10 +68,10 @@ describe("diagnosis handoff", () => {
       },
     });
 
-    expect(brief).toContain("Site: Not specified");
-    expect(brief).toContain("Role: Not specified");
-    expect(brief).toContain("Owner: Unassigned");
-    expect(brief).toContain("Review note: No follow-up note yet.");
+    expect(brief).toContain("站点：未填写");
+    expect(brief).toContain("角色：未填写");
+    expect(brief).toContain("负责人：未指派");
+    expect(brief).toContain("跟进备注：还没有跟进备注。");
   });
 
   it("creates a stable download filename", () => {
@@ -108,6 +108,6 @@ describe("diagnosis handoff", () => {
       },
     });
 
-    expect(brief).toContain("Pain type: Handoff delay");
+    expect(brief).toContain("痛点类型：交接延迟");
   });
 });

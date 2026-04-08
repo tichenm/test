@@ -21,7 +21,7 @@ describe("SignOutButton", () => {
 
     render(<SignOutButton />);
 
-    await user.click(screen.getByRole("button", { name: "Sign out" }));
+    await user.click(screen.getByRole("button", { name: "退出登录" }));
 
     await waitFor(() => {
       expect(signOutMock).toHaveBeenCalledWith({

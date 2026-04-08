@@ -62,28 +62,28 @@ describe("buildInterviewInsights", () => {
       totalSessions: 4,
       completedSessions: 3,
       activeSessions: 1,
-      topPainType: "Overstock",
+      topPainType: "积压",
       topPainTypeCount: 2,
     });
     expect(insights.railBreakdown).toEqual([
       {
         key: "warehouse-receiving",
-        label: "Warehouse receiving",
+        label: "仓库收货",
         count: 2,
       },
       {
         key: "inventory-replenishment",
-        label: "Inventory and replenishment",
+        label: "库存与补货",
         count: 1,
       },
     ]);
     expect(insights.painTypeBreakdown).toEqual([
-      { key: "overstock", label: "Overstock", count: 2 },
-      { key: "stockout", label: "Stockout", count: 1 },
+      { key: "overstock", label: "积压", count: 2 },
+      { key: "stockout", label: "缺货", count: 1 },
     ]);
     expect(insights.severityBreakdown).toEqual([
-      { key: "medium", label: "medium", count: 2 },
-      { key: "high", label: "high", count: 1 },
+      { key: "medium", label: "中", count: 2 },
+      { key: "high", label: "高", count: 1 },
     ]);
     expect(insights.storeBreakdown).toEqual([
       { key: "North Hub", label: "North Hub", count: 2 },
